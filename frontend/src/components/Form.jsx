@@ -16,7 +16,7 @@ function Form({route, method}) {
             if(method === "login"){
                 navigate("/lobby");
             } else {
-                navigate("/login");
+                navigate("/");
             }
         } catch (error) {
             console.error("Submit error:", error);

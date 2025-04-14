@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from dotenv import load_dotenv #ADDED
+import os
 
 load_dotenv() #ADDED
 
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'api', #ADDED
     'rest_framework', #ADDED
     'corsheaders', #ADDED
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -73,7 +75,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = "backend.wsgi.application"
+ASGI_APPLICATION = 'backend.asgi.application'
 
 
 # Database
@@ -141,3 +144,13 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
+
+REDIS_URL = os.getenv("REDIS_URL")
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
