@@ -32,7 +32,7 @@ class LoginView(APIView):
             login(request, user)
             return Response({"message": "Logged in"})
         else:
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid login credentials."}, status=status.HTTP_401_UNAUTHORIZED)
         
 class LogoutView(APIView):
     def post(self, request):

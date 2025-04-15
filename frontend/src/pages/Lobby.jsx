@@ -1,7 +1,7 @@
 import LogoutButton from "../components/LogoutButton";
 import { useEffect, useState } from 'react';
 
-function Lobby() {
+function Lobby({ setIsAuthenticated }) {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -9,7 +9,6 @@ function Lobby() {
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log("Received:", data);
         if (data.type === "user.list") {
             setUsers(data.users);
         } else if (data.type === "join") {
@@ -30,7 +29,7 @@ function Lobby() {
         <ul>
             {users.map(user => <li key={user}>{user}</li>)}
         </ul>
-        <LogoutButton />
+        <LogoutButton setIsAuthenticated={setIsAuthenticated}/>
     </div>
   );
 }

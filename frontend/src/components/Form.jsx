@@ -2,7 +2,7 @@ import api from "../api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Form({route, method}) {
+function Form({ route, method,  setIsAuthenticated }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
@@ -14,16 +14,18 @@ function Form({route, method}) {
         try{
             await api.post(route, {username, password});
             if(method === "login"){
-                navigate("/lobby");
+                setIsAuthenticated(true);
+                navigate("/lobby", { replace: true });
             } else {
-                navigate("/");
+                navigate("/login");
             }
         } catch (error) {
-            console.error("Submit error:", error);
-            if (error.response) {
-                console.error("Response error:", error.response.data);
+            if (error.response && error.response.status === 401) {
+                alert("Login error:", error);
+            } else {
+                alert("Unexpected error. Try again later.");
+                console.error('Unexpected error:', error);
             }
-            alert(error);
         }
     };
 
