@@ -12,6 +12,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         self.user = self.scope["user"]
         if self.user.is_authenticated:
             await self.channel_layer.group_add("lobby", self.channel_name)
+            await self.channel_layer.group_add(f"user_{self.user.username}", self.channel_name)
             await self.accept()
 
             await self.add_user_to_lobby(self.user.username)
@@ -19,7 +20,8 @@ class LobbyConsumer(AsyncWebsocketConsumer):
             users = await self.get_all_users()
             await self.send(text_data=json.dumps({
                 "type": "user.list",
-                "users": users
+                "users": users,
+                "self": self.user.username
             }))
 
             await self.channel_layer.group_send("lobby", {
@@ -30,6 +32,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
             await self.channel_layer.group_discard("lobby", self.channel_name)
+            await self.channel_layer.group_discard(f"user_{self.user.username}", self.channel_name)
 
             await self.remove_user_from_lobby(self.user.username)
 
@@ -37,6 +40,19 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                 "type": "user.left",
                 "username": self.user.username
             })
+
+    async def receive(self, text_data):
+        if self.user.is_authenticated:
+            data = json.loads(text_data)
+            event_type = data.get("type")
+
+            if event_type == "invite":
+                target_user = data.get("to")
+                await self.send_invite(target_user)
+
+            elif event_type == "invite.accept":
+                from_user = data.get("from")
+                await self.send_invite_accepted(from_user, data.get("status"))
 
     async def user_joined(self, event):
         await self.send(text_data=json.dumps({
@@ -65,3 +81,29 @@ class LobbyConsumer(AsyncWebsocketConsumer):
     async def get_all_users(self):
         redis = await self.get_redis()
         return list(await redis.smembers("lobby_users"))
+    
+    async def send_invite(self, target_user):
+        await self.channel_layer.group_send(f"user_{target_user}", {
+            "type": "receive.invite",
+            "from": self.user.username
+        })
+
+    async def send_invite_accepted(self, from_user, acceptance_status):
+        await self.channel_layer.group_send(f"user_{from_user}", {
+            "type": "receive.invite.accepted",
+            "from": self.user.username,
+            "status": acceptance_status
+        })
+
+    async def receive_invite(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "invite",
+            "from": event["from"]
+        }))
+
+    async def receive_invite_accepted(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "invite.accepted",
+            "from": event["from"],
+            "status": event["status"]
+        }))

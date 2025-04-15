@@ -21,7 +21,7 @@ function Form({ route, method,  setIsAuthenticated }) {
             }
         } catch (error) {
             if (error.response && error.response.status === 401) {
-                alert("Login error:", error);
+                alert("Login error: " + error.response.data.error);
             } else {
                 alert("Unexpected error. Try again later.");
                 console.error('Unexpected error:', error);
