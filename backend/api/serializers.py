@@ -12,3 +12,8 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(user.password)
         user.save()
         return user
+    
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username is already taken.")
+        return value

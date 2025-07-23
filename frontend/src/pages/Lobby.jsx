@@ -1,13 +1,14 @@
 import LogoutButton from "../components/LogoutButton";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from "react-router-dom";
 
 function Lobby({ setIsAuthenticated }) {
+    const navigate = useNavigate();
+    const selfUserRef = useRef(null);
+
     const [users, setUsers] = useState([]);
-    const [selfUser, setSelfUser] = useState(null);
     const [socket, setSocket] = useState(null);
     const [inviteUser, setInviteUser] = useState(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
         const ws = new WebSocket(`${import.meta.env.VITE_WS_API_URL}lobby/`);
@@ -17,7 +18,7 @@ function Lobby({ setIsAuthenticated }) {
             const data = JSON.parse(event.data);
             if (data.type === "user.list") {
                 setUsers(data.users);
-                setSelfUser(data.self);
+                selfUserRef.current = data.self;
             } else if (data.type === "join") {
                 setUsers(prev => [...new Set([...prev, data.username])]);
             } else if (data.type === "leave") {
@@ -26,14 +27,17 @@ function Lobby({ setIsAuthenticated }) {
                 setInviteUser(data.from);
             } else if (data.type === "invite.accepted") {
                 if (data.status === "accepted") {
-                    navigate("/game", { replace: true });
+                    const [player1, player2] = [selfUserRef.current, data.from].sort();
+                    const gameId = `game-${player1}-${player2}`;
+                    navigate(`/game/${gameId}`, { replace: true });
                 }
             }
         };
 
         return () => {
-            ws.close();
-        };
+            if (ws.readyState === 1) {
+                ws.close();
+            }};
     }, []);
 
     const sendInvite = (toUsername) => {
@@ -52,7 +56,9 @@ function Lobby({ setIsAuthenticated }) {
             status
         }));
         if (status == "accepted") {
-            navigate("/game", { replace: true });
+            const [player1, player2] = [selfUserRef.current, inviteUser].sort();
+            const gameId = `game-${player1}-${player2}`;
+            navigate(`/game/${gameId}`, { replace: true });
         } else {
             setInviteUser(null);
         }
@@ -62,13 +68,18 @@ function Lobby({ setIsAuthenticated }) {
         <div>
             <h2>Lobby - Online Users</h2>
             <ul>
-                {users.map(user =>
-                <li key={user}>
-                    {user}
-                    {user !== selfUser && (
-                        <button onClick={() => sendInvite(user)}>Invite</button>
-                    )}
-                </li>)}
+                {[
+                    ...users.filter(user => user === selfUserRef.current),
+                    ...users
+                        .filter(user => user !== selfUserRef.current)
+                        .sort((a, b) => a.localeCompare(b))
+                ].map(user =>
+                    <li key={user}>
+                        {user}
+                        {user !== selfUserRef.current && (
+                            <button onClick={() => sendInvite(user)}>Invite</button>
+                        )}
+                    </li>)}
             </ul>
             <LogoutButton setIsAuthenticated={setIsAuthenticated}/>
             {inviteUser && (

@@ -3,6 +3,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from dotenv import load_dotenv
 import os
 import redis.asyncio as redis
+from .game_engine import game_engine
 
 load_dotenv()
 REDIS_URL = os.getenv("REDIS_URL")
@@ -52,7 +53,14 @@ class LobbyConsumer(AsyncWebsocketConsumer):
 
             elif event_type == "invite.accept":
                 from_user = data.get("from")
-                await self.send_invite_accepted(from_user, data.get("status"))
+                status = data.get("status")
+
+                await self.send_invite_accepted(from_user, status)
+
+                if status == "accepted":
+                    player1, player2 = sorted([from_user, self.user.username])
+                    game_id = f"game-{player1}-{player2}"
+                    game_engine.create_game(game_id, player1, player2)
 
     async def user_joined(self, event):
         await self.send(text_data=json.dumps({

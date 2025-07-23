@@ -14,6 +14,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   
   useEffect(() => {
+    
     api.get("api/csrf/");
 
     const checkLoginStatus = async () => {
@@ -60,7 +61,7 @@ function App() {
                 <Lobby setIsAuthenticated={setIsAuthenticated}/>
             </PrivateRoute>
         } />
-        <Route path="/game" element={
+        <Route path="/game/:gameId" element={
             <PrivateRoute isAuthenticated={isAuthenticated}>
                 <Game />
             </PrivateRoute>

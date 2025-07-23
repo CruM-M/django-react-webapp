@@ -2,9 +2,10 @@ import api from "../api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Form({ route, method,  setIsAuthenticated }) {
+const Form = ({ route, method,  setIsAuthenticated }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [requestErrors, setRequestErrors] = useState('');
     const navigate = useNavigate();
 
     const method_name = method === "login" ? "Login" : "Register";
@@ -20,11 +21,20 @@ function Form({ route, method,  setIsAuthenticated }) {
                 navigate("/login");
             }
         } catch (error) {
-            if (error.response && error.response.status === 401) {
-                alert("Login error: " + error.response.data.error);
+            if (error.response) {
+                const status = error.response.status;
+                const data = error.response.data;
+        
+                if (status === 401) {
+                    alert("Login error: " + data.error);
+                } else if (status === 400) {
+                    setRequestErrors(Object.values(data).flat().join("\n"));
+                } else {
+                    alert("Unexpected error. Try again later.");
+                    console.error('Unexpected error:', error);
+                }
             } else {
-                alert("Unexpected error. Try again later.");
-                console.error('Unexpected error:', error);
+                alert("No response from server.");
             }
         }
     };
@@ -48,6 +58,11 @@ function Form({ route, method,  setIsAuthenticated }) {
         <button className="form-button" type="submit">
             {method_name}
         </button>
+        {requestErrors && (
+            <div>
+                <p>{requestErrors}</p>
+            </div>
+        )}
     </form>
 }
 
