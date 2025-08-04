@@ -41,6 +41,15 @@ const Form = ({ route, method,  setIsAuthenticated }) => {
 
     return <form onSubmit={handleForm} className="form-container">
         <h1>{method_name}</h1>
+        <div>
+            <button
+                className="form-button"
+                type="button"
+                onClick={() => navigate("/")}
+            >
+                Home
+            </button>
+        </div>
         <input 
             className="form-input"
             type="text"

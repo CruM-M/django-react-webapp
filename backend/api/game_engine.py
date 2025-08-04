@@ -28,18 +28,6 @@ class GameEngine:
                 player1: False,
                 player2: False
             },
-            "restart": {
-                player1: False,
-                player2: False
-            },
-            "temp_disconnect": {
-                player1: False,
-                player2: False
-            },
-            "full_disconnect": {
-                player1: False,
-                player2: False
-            },
             "turn": player1,
             "winner": None
         }
@@ -50,13 +38,15 @@ class GameEngine:
     def place_ships(self, game_id, player, x_start, y_start, length, orientation):
         game = self.get_game(game_id)
         if not game:
-            return {"result": "Game not found."}
+            return {"result": "GAME NOT FOUND",
+                    "access": "private"}
         
         board = game["boards"][player]
         ships_left = game["ships_left"][player]
 
         if ships_left[length] == 0:
-            return {"result": f"No more ships of length {length} available."}
+            return {"result": f"NO MORE SHIPS OF LENGTH {length} AVAILABLE",
+                    "access": "private"}
 
         coords = []
 
@@ -65,10 +55,12 @@ class GameEngine:
             y = y_start if orientation == "horizontal" else y_start + i
 
             if not (0 <= x < 10 and 0 <= y < 10):
-                return {"result": "Ship out of bounds."}
+                return {"result": "SHIP OUT OF BOUNDS",
+                        "access": "private"}
             
             if board[y][x] == "S":
-                return {"result": "Ship overlaps with another."}
+                return {"result": "SHIP OVERLAPS WITH ANOTHER",
+                        "access": "private"}
             
             coords.append((x, y))
 
@@ -81,12 +73,14 @@ class GameEngine:
         })
         game["ships_left"][player][length] -= 1
 
-        return {"result": "Ship placed"}
+        return {"result": "SHIP PLACED",
+                "access": "private"}
 
     def remove_ship(self, game_id, player, x, y):
         game = self.get_game(game_id)
         if not game:
-            return {"result": "Game not found."}
+            return {"result": "GAME NOT FOUND",
+                    "access": "private"}
 
         board = game["boards"][player]
         ships = game["placed_ships"][player]
@@ -103,60 +97,66 @@ class GameEngine:
                 board[sy][sx] = ""
             ships.remove(ship_to_remove)
             ships_left[len(ship_to_remove["coords"])] += 1
-            return {"result": "Ship removed"}
+            return {"result": "SHIP REMOVED",
+                    "access": "private"}
         else:
-            return {"result": "No ship found at this position."}
+            return {"result": "NO SHIP FOUND AT CHOSEN POSITION",
+                    "access": "private"}
 
 
     def set_ready(self, game_id, player):
         game = self.get_game(game_id)
         if not game:
-            return {"result": "Game not found."}
+            return {"result": "GAME NOT FOUND",
+                    "access": "private"}
 
         if any(count > 0 for count in game["ships_left"][player].values()):
-            return {"result": "You haven't placed all of the ships yet."}
+            return {"result": "YOU MUST PLACE ALL SHIPS FIRST",
+                    "access": "private"}
 
         game["ready"][player] = True
-        return {"result": "You're ready!"}
+        return {"result": f"{str(player).upper()} IS READY",
+                "access": "public"}
 
 
     def make_move(self, game_id, player, x, y):
         game = self.get_game(game_id)
 
         if not game:
-            return {"result": "Game not found."}
-
-        if game["turn"] != player:
-            return {"result": "Not your turn."}
+            return {"result": "GAME NOT FOUND",
+                    "access": "private"}
         
         enemy = [p for p in game["players"] if p != player][0]
         enemy_board = game["boards"][enemy]
         hit_board = game["hits"][player]
 
         if hit_board[y][x] != "":
-            return {"result": "repeat"}
+            return {"result": "ALREADY SHOT THIS POSITION - CHOOSE ANOTHER",
+                    "access": "private"}
 
         if enemy_board[y][x] == "S":
             hit_board[y][x] = "X"
-            result = "HIT"
+            result = f"{str(player).upper()} LANDED A HIT"
 
             for ship in game["placed_ships"][enemy]:
                 if (x, y) in ship["coords"]:
                     if all(hit_board[yy][xx] == "X" for xx, yy in ship["coords"]):
-                        result = f"SUNK SHIP: {len(ship["coords"])}"
+                        result = f"{str(player).upper()} SUNK ENEMY SHIP"
                         ship["sunk"] = True
                         
                         if all(s["sunk"] for s in game["placed_ships"][enemy]):
-                            result = "win"
+                            result = f"GAME OVER! {str(player).upper()} WON!"
+                            game["winner"] = player
                     break
         else:
             hit_board[y][x] = "O"
-            result = "MISS"
+            result = f"{str(player).upper()} MISSED"
 
         game["turn"] = enemy
 
         return {
             "result": result,
+            "access": "public",
             "x": x,
             "y": y,
             "next_turn": game["turn"]
@@ -179,8 +179,6 @@ class GameEngine:
             "ships_left": game["ships_left"][player],
             "ready": game["ready"][player],
             "opponent_ready": game["ready"][enemy],
-            "restart": game["restart"],
-            "opponent_disconnected": game["full_disconnect"][enemy],
             "turn": game["turn"],
             "winner": game["winner"]
         }

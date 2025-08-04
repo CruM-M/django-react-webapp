@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const Board = ({board, hits, placedShips, onCellClick, canPlace, selectedShip, orientation, placeMode}) => {
+const Board = ({board, hits, placedShips, onCellClick, canPlace, selectedShip, orientation}) => {
     const [hoverCoords, setHoverCoords] = useState(null);
 
     return(

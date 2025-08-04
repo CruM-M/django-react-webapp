@@ -1,4 +1,5 @@
 import Board from "../components/Board";
+import Chat from "../components/Chat";
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -9,7 +10,6 @@ function Game() {
     const shipLengths = [5, 4, 3, 3, 2];
     const [socket, setSocket] = useState(null);
     const [state, setState] = useState(null);
-    const [message, setMessage] = useState(null);
     const [selectedShip, setSelectedShip] = useState(null);
     const [gameOver, setGameOver] = useState(false);
     const [voteRestart, setVoteRestart] = useState(false);
@@ -17,48 +17,67 @@ function Game() {
     const [bothReady, setBothReady] = useState(false);
     const [placeMode, setPlaceMode] = useState("place");
     const [orientation, setOrientation] = useState("horizontal");
+    const [messages, setMessages] = useState([]);
 
     useEffect(() => {
-        
         const ws = new WebSocket(`${import.meta.env.VITE_WS_API_URL}game/${gameId}/`);
         setSocket(ws);
+
+        let isUnmounted = false;
+        let intervalRef = null;
+
+        ws.onopen = () => {
+            if (isUnmounted) return;
+
+            intervalRef = setInterval(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ action: "ping" }));
+                }
+            }, 15000);
+        };
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === "game_state") {
                 setState(data.state);
+                setOpponentLeft(data.opponent_left);
                 if (data.state.ready && data.state.opponent_ready) {
                     setBothReady(true);
                 }
-                if (data.state.opponent_disconnected) {
-                    setOpponentLeft(true);
-                    const enemy = data.state.players.find(p => p !== data.state.self);
-                    setMessage(`${capitalizeFirstLetter(enemy)} has LEFT the game!`);
-                }
-                if (Object.values(data.state.restart).every(player => player === true)) {
-                    setGameOver(false);
-                    setVoteRestart(false);
-                    setBothReady(false);
-                }
                 if (data.state.winner !== null) {
                     setGameOver(true);
-                    if (data.state.winner === data.state.self) {
-                        setMessage("YOU WON!");
-                    } else {
-                        setMessage("YOU LOST");
-                    }
                 }
-            } else if (data.error) {
-                setMessage(data.error);
-            } else if (data.result === "repeat") {
-                makeMove;
-            } else if (data.result) {
-                setMessage(data.result);
+            }
+            else if (data.type === "chat_history") {
+                setMessages(data.history);
+            }
+            else if (data.type === "new_game") {
+                setGameOver(false);
+                setVoteRestart(false);
+                setBothReady(false);
             }
         };
 
+        ws.onclose = (event) => {
+            isUnmounted = true;
+            if (intervalRef) {
+                clearInterval(intervalRef);
+                intervalRef = null;
+            }
+
+            if (event.code === 4000 || event.code === 1006) {
+                navigate("/lobby", { replace: true });
+            }
+        };
+
+        ws.onerror = () => {
+            navigate("/lobby", { replace: true });
+        };
+
         return () => {
-            if (ws.readyState === 1) {
+            isUnmounted = true;
+
+            if (ws.readyState === WebSocket.OPEN) {
                 ws.close();
             }};
     }, []);
@@ -111,6 +130,9 @@ function Game() {
 
     const leaveGame = () => {
         send({ action: "leave_game"});
+        socket.close();
+
+        navigate("/lobby", { replace: true });
     };
 
     const allShipsPlaced = () => {
@@ -129,15 +151,25 @@ function Game() {
 
     return (
         <div>
-            <h2>Game: {state.self} vs {opponent}</h2>
+            <h2>Game: {capitalizeFirstLetter(state.self)} vs {capitalizeFirstLetter(opponent)}</h2>
 
-            <button onClick={() => {navigate("/lobby", { replace: true }); leaveGame();}}>
+            <button onClick={leaveGame}>
                 Return to Lobby
             </button>
 
+            <div>
+                <Chat
+                    socket={socket}
+                    currentUser={state.self}
+                    messages={messages}
+                    chatWith={null}
+                    game={true}
+                />
+            </div>
+
             {gameOver && !opponentLeft && (
-                <button 
-                    onClick={() => {restartGame(); setMessage(null);}}
+                <button
+                    onClick={restartGame}
                     disabled={voteRestart}
                 >
                     {voteRestart ? "Voted for rematch" : "Play Again"}
@@ -146,10 +178,6 @@ function Game() {
 
             {bothReady && !gameOver && !opponentLeft && (
                 <p>It's {capitalizeFirstLetter(isPlayerTurn ? "your" : opponent + "'s")} turn</p>
-            )}
-
-            {gameOver && (
-                <p>GAME OVER</p>
             )}
 
             {!state.ready && !opponentLeft && (
@@ -176,8 +204,6 @@ function Game() {
                 </div>
             )}
 
-            {message && <div>{message}</div>}
-            
             {!opponentLeft && (
                 <div>
                     <h3>Your Board</h3>
@@ -191,7 +217,7 @@ function Game() {
                     />
                 </div>
             )}
-                
+
             {bothReady && !opponentLeft && (
                 <div>
                     <h3>Opponent Board</h3>

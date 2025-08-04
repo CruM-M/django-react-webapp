@@ -8,9 +8,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import ensure_csrf_cookie
-from api.lobby_consumer import LobbyConsumer
-from channels.layers import get_channel_layer
-import asyncio
 
 @api_view(["GET"])
 @ensure_csrf_cookie
@@ -39,18 +36,6 @@ class LogoutView(APIView):
         user = request.user
 
         if user.is_authenticated:
-            username = user.username
-
-            consumer = LobbyConsumer(scope={"user": user})
-            consumer.channel_layer = get_channel_layer()
-
-            asyncio.run(consumer.remove_user_from_lobby(username))
-
-            asyncio.run(consumer.channel_layer.group_send("lobby", {
-                "type": "user.left",
-                "username": username
-            }))
-
             logout(request)
             return Response({"message": "Logged out"})
         
