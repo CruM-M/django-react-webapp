@@ -10,13 +10,38 @@ import api from './api';
 import PublicRoute from "./components/PublicRoute"
 import PrivateRoute from "./components/PrivateRoute"
 
+/**
+ * App component - Main application entry point.
+ *
+ * Features:
+ * - Handles authentication state (check user session)
+ * - Configures application routes with access control
+ * - Displays a loading screen until authentication status is resolved
+ *
+ * Routes:
+ * - "/" (Public) → Home page
+ * - "/register" (Public) → Register page
+ * - "/login" (Public) → Login page
+ * - "/lobby" (Private) → Lobby for authenticated users
+ * - "/game/:gameId" (Private) → Game session
+ * - "*" → Not Found page
+ *
+ * @component
+ * @returns {JSX.Element} Application routes
+ */
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   
+  /**
+   * useEffect hook:
+   * - Fetches CSRF token
+   * - Checks user authentication status via API
+   */
   useEffect(() => {
-    
+    // Initialize CSRF protection
     api.get("api/csrf/");
 
+    // Verify if user is authenticated
     const checkLoginStatus = async () => {
       try {
         const response = await api.get('api/check-auth/');
@@ -35,8 +60,9 @@ function App() {
     checkLoginStatus();
   }, []);
 
+  // Show loader until authentication state is known
   if (isAuthenticated === null) {
-    return <div>Loading...</div>;
+    return <div>{"Loading..."}</div>;
   }
 
   return (
