@@ -36,7 +36,10 @@ const LogoutButton = ({ setIsAuthenticated }) => {
 
     return (
         <div>
-            <button onClick={handleLogout}>
+            <button
+                className="button"
+                onClick={handleLogout}
+            >
                 {"Logout"}
             </button>
         </div>

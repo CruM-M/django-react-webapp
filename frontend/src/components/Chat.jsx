@@ -50,93 +50,91 @@ const Chat = ({socket, currentUser, messages, chatWith, game}) => {
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
                 action: "send_msg",
+                sender: "user",
                 msg,
+                access: "public",
                 chatWith
             }));
         }
     };
 
     return (
-        <div>
+        <div className="chat-container">
             {/* Chat container */}
-            <div style={{ 
-                height: "120px",
-                maxHeight: "120px",
-                maxWidth: "600px",
-                overflowY: "auto",
-                border: "1px solid #000",
-                position: "relative"
-            }}>
+            <div className="chat-box">
                 {/* Display current chat target */}
                 {chatWith && (
-                    <div style={{
-                        position: "sticky",
-                        top: 0,
-                        background: "white",
-                        zIndex: 1,
-                        padding: "5px",
-                        borderBottom: "1px solid"
-                    }}>
+                    <div className="chat-target">
                         {"Chatting with: "}
-                        <strong>
+                        <span className="user-name">
                             {capitalizeFirstLetter(chatWith)}
-                        </strong>
+                        </span>
                     </div>
                 )}
 
                 {/* Message list */}
-                <div style={{
-                    padding: "5px",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end"
-                }}>
+                <div className="message-list">
                     {messages
-                    .filter(m => !(
-                        m.from !== currentUser
-                        && m.msg_type === "system"
-                        && m.access === "private"
-                    ))
-                    .map((m, i) => (
-                        <div key={i} style={{
-                            color: m.msg_type === "system"
-                            ? "blue"
-                            : "green"
-                        }}>
-                            <strong>
-                                {capitalizeFirstLetter(
-                                    m.msg_type === "system"
-                                    ? m.msg_type
-                                    : m.from
-                                )}:
-                            </strong> {m.msg}
-                        </div>
-                    ))
+                        .filter(m => !(
+                            m.from !== currentUser
+                            && m.msg_type === "system"
+                            && m.access === "private"
+                        ))
+                        .map((m, i) => (
+                            <div key={i} style={{
+                                color: m.msg_type === "system"
+                                ? "#93a0e7ff"
+                                : "#b4f7baff"
+                            }}>
+                                <span>
+                                    {capitalizeFirstLetter(
+                                        m.msg_type === "system"
+                                        ? m.msg_type
+                                        : m.from
+                                    )}:
+                                </span> {m.msg}
+                            </div>
+                        ))
                     }
+                    {messages.length === 0 && (
+                        <div className="chat-box-text">
+                            {"Chat box..."}
+                        </div>
+                    )}
                     <div ref={messagesEndRef} style={{ height: "1px" }}/>
                 </div>
-                
             </div>
 
-            {/* Message input */}
-            <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter" && (chatWith || game)) {
-                        sendMessage(input); setInput("");
-                    }
-                }}
-                placeholder="Type your message here..."
-            />
+            <div className="chat-input-row">
+                {/* Message input */}
+                <input
+                    className="chat-input"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (
+                            e.key === "Enter"
+                            && (chatWith || game)
+                            && ((input || "").trim() !== "")
+                        ) {
+                            sendMessage(input); setInput("");
+                        }
+                    }}
+                    placeholder="Type your message here..."
+                />
 
-            {/* Send button */}
-            <button
-                onClick={() => {sendMessage(input); setInput("");}}
-                disabled={!(chatWith || game)}
-            >
-                {"Send"}
-            </button>
+                {/* Send button */}
+                <button
+                    className="button"
+                    onClick={() => {sendMessage(input); setInput("");}}
+                    disabled={
+                        !(chatWith || game)
+                        || ((input || "").trim() === "")
+                    }
+                >
+                    {"Send"}
+                </button>
+            </div>
         </div>
     );
 }

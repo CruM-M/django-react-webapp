@@ -151,7 +151,6 @@ class GameConsumer(BaseConsumer):
 
         action = data.get("action")
         if not action:
-            await self.send_error("Missing action.")
             return
 
         actions_map = {
@@ -169,7 +168,7 @@ class GameConsumer(BaseConsumer):
         if handler:
             await handler(data)
         else:
-            await self.send_error(f"Unknown action: {action}")
+            return
 
     @BaseConsumer.refresh_ttl_on_action
     async def action_place_ship(self, data):
@@ -261,7 +260,6 @@ class GameConsumer(BaseConsumer):
         """
         game = game_engine.get_game(self.game_id)
         if not game:
-            await self.send_error("Game not found.")
             return
 
         player1, player2 = sorted(game["players"])
@@ -289,7 +287,7 @@ class GameConsumer(BaseConsumer):
         """
         Sends a chat message.
         """
-        await self.push_message("user", data["msg"], "public")
+        await self.push_message(data["sender"], data["msg"], data["access"])
 
     @BaseConsumer.refresh_ttl_on_action
     async def action_ping(self, data):
@@ -414,12 +412,3 @@ class GameConsumer(BaseConsumer):
             "restart",
             value
         )
-
-    async def send_error(self, message):
-        """
-        Sends an error message to the client.
-        """
-        await self.send_json({
-            "type": "error",
-            "message": message
-        })

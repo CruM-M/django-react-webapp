@@ -1,0 +1,394 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap");
+
+html {
+    font-family: "Press Start 2P", system-ui;
+    font-weight: 400;
+    font-style: normal;
+    font-size: clamp(0.60rem, 1.4vw, 1.4rem);
+}
+
+body {
+    color: #26e936;
+    background-color: #161d25;
+    display: flex;
+    justify-content: center;
+}
+
+h3 {
+    margin-bottom: 0.9rem;
+}
+
+.page-container {
+    padding: 1rem 2rem 1rem 2rem;
+}
+
+.main-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.left-container {
+    width: 30rem;
+    padding: 1rem;
+}
+
+.right-container {
+    width: 30rem;
+    padding: 1rem;
+}
+
+.form-input {
+    font-family: inherit;
+    font-size: inherit;
+    background-color: #1c221e;
+    border: 0.125rem solid #1ddd51;
+    border-radius: 0.95rem;
+    box-sizing: border-box;
+    color: #fff;
+    margin: 0.35rem;
+    min-height: 2.4rem;
+    min-width: 10rem;
+    max-width: 20rem;
+    outline: none;
+    padding: 0.4rem 1.2rem;
+    width: auto;
+}
+
+.chat-input {
+    font-family: inherit;
+    font-size: 0.8rem;
+    background-color: #1c221e;
+    border: 0.125rem solid #1ddd51;
+    border-radius: 0.95rem;
+    box-sizing: border-box;
+    color: #b4f7baff;
+    margin: 0.2rem;
+    padding: 0.4rem 1.2rem;
+    outline: none;
+    width: 100%;
+}
+
+.button {
+    font-family: inherit;
+    font-size: inherit;
+    text-align: center;
+    background-color: #1c221e;
+    border: 0.125rem solid #26e936;
+    border-radius: 0.95rem;
+    box-sizing: border-box;
+    color: #26e936;
+    cursor: pointer;
+    display: inline-block;
+    margin: 0.2rem;
+    padding: 0.6rem 1.2rem;
+    max-width: 100%;
+    transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    width: auto;
+    will-change: transform;
+}
+
+.ship-button {
+    font-family: inherit;
+    font-size: inherit;
+    text-align: center;
+    background-color: #1c221e;
+    border: 0.125rem solid #26e936;
+    border-radius: 0.95rem;
+    box-sizing: border-box;
+    color: #26e936;
+    cursor: pointer;
+    display: inline-block;
+    margin: 0.2rem;
+    padding: 0.6rem 1.2rem;
+    transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    width: 12rem;
+    will-change: transform;
+}
+
+.ship-button.selected {
+    color: #fff;
+    background-color: #26e93681;
+}
+
+@keyframes blink {
+    0%, 100% {
+        background-color: #1c221e;
+    }
+    50% {
+        background-color: #26e93670;
+        color: #fff;
+    }
+}
+
+.blinking-button {
+    animation: blink 1s infinite;
+    font-family: inherit;
+    font-size: inherit;
+    text-align: center;
+    background-color: #1c221e;
+    border: 0.125rem solid #26e936;
+    border-radius: 0.95rem;
+    box-sizing: border-box;
+    color: #26e936;
+    cursor: pointer;
+    display: inline-block;
+    margin: 0.2rem;
+    padding: 0.6rem 1.2rem;
+    max-width: 100%;
+    transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    width: auto;
+    will-change: transform;
+}
+
+.ship-button:disabled,
+.button:disabled {
+    pointer-events: none;
+    color: #26e93670;
+    border-color: #26e93670;
+}
+
+.ship-button:hover,
+.button:hover {
+    color: #fff;
+    background-color: #26e93681;
+    box-shadow: rgba(0, 0, 0, 0.25) 0 0.5rem 1rem;
+    transform: translateY(-0.125rem);
+}
+
+.ship-button:active,
+.button:active {
+    box-shadow: none;
+    transform: translateY(0);
+}
+
+.home-container {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.form-container {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
+    width: fit-content;
+}
+
+.header-container {
+    text-align: center;
+}
+
+.navigate-button-container {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.form-button-container {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.chat-container {
+    max-width: auto;
+}
+
+.chat-box {
+    display: flex;
+    flex-direction: column;
+    font-family: inherit;
+    font-size: inherit;
+    background-color: #1c221e;
+    border: 0.125rem solid #1ddd51;
+    border-radius: 0.95rem;
+    box-sizing: border-box;
+    margin: 0.35rem;
+    height: 8.4rem;
+    width: auto;
+    outline: none;
+    padding: 0.5rem 1rem;
+    position: relative;
+}
+
+.request-errors{
+    font-size: 0.6rem;
+    max-width: 19rem;
+    line-height: 1.4;
+    padding: 0.5rem;
+}
+
+.chat-target {
+    font-size: 0.6rem;
+    background-color: #1c221e;
+    padding: 0.4rem;
+    border-bottom: 0.125rem solid;
+    line-height: 1.4;
+}
+
+.message-list {
+    font-size: 0.6rem;
+    padding: 0.4rem;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.4;
+    overflow-y: auto;
+    flex: 1;
+    margin-top: 0.3rem;
+    scrollbar-width: thin;
+    scrollbar-color: #26e936 transparent;
+}
+
+.message-list > div:first-child {
+    margin-top: auto;
+}
+
+.message-list::-webkit-scrollbar {
+    width: 0.4rem;
+}
+
+.message-list::-webkit-scrollbar-track {
+    background-color: #1c221e;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+    background-color: #26e936;
+    border-radius: 0.4rem;
+}
+
+.chat-input-row {
+    display: flex;
+}
+
+.user-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.user-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.4rem;
+    border-bottom: 0.125rem solid;
+}
+
+.user-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-name {
+    color: #e8eb3cff;
+}
+
+.user-status {
+    font-size: 0.8rem;
+    color: #4280f3;
+    height: 0.6rem;
+    padding: 0.4rem;
+}
+
+.invite-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    line-height: 1.4rem;
+}
+
+.invite-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 0.125rem solid;
+}
+
+.invite-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.board-table {
+    background-color: #1c221e;
+    border: 0.125rem solid #1ddd51;
+    border-radius: 0.95rem;
+    border-collapse: collapse;
+    overflow: hidden;
+    box-shadow: 0 0 0 0.125rem #1ddd51;
+    width: 30rem;
+    height: 30rem;
+}
+
+.board-table.small {
+    width: 14.2rem;
+    height: 14.2rem;
+}
+
+.board-table td {
+    border: 0.125rem solid #206d26;
+    cursor: pointer;
+    transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+}
+
+.ship-button-container {
+    display: grid;
+    grid-template-columns: 12rem 12rem;
+    justify-content: center;
+    padding: 1px;
+    gap: 1rem;
+}
+
+.action-button-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 1rem 2rem;
+}
+
+.small-board-container {
+    padding-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.turn-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 12rem;
+    padding: 1rem;
+}
+
+.turn-state {
+    color: #e8eb3cff;
+}
+
+.turn-state span {
+    font-size: 1.6rem;
+    line-height: 1.4;
+    display: block;
+    text-align: center;
+}
+
+.board-button-container {
+    display: flex;
+    gap: 1rem;
+}
+
+.chat-box-text {
+    opacity: 50%;
+}

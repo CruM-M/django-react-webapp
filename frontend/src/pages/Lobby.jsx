@@ -111,10 +111,6 @@ function Lobby({ setIsAuthenticated }) {
                         ));
                     }
                     break;
-
-                case "error":
-                    alert(data.message);
-                    break;
             }
         };
 
@@ -193,139 +189,164 @@ function Lobby({ setIsAuthenticated }) {
         }));
     };
 
+    /**
+     * Capitalizes the first letter of a given string.
+     * @param {string} string - Input string
+     * @returns {string} Formatted string with first letter uppercase
+     */
+    const capitalizeFirstLetter = (string) => {
+        if (!string) return "";
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
     return (
-        <div>
-            <h2>{"Lobby"}</h2>
+        <div className="page-container">
+            <h1 className="header-container">{"Lobby"}</h1>
 
-            {/* Logout button - closes WebSocket and resets auth state */}
-            <LogoutButton onClick={
-                () => {socket.close();}
-            }
-                setIsAuthenticated={setIsAuthenticated}
-            />
+            <div className="main-container">
+                <div className="left-container">
+                    {/* Logout button - closes WebSocket and resets auth 
+                     * state */}
+                    <LogoutButton onClick={
+                        () => {socket.close();}
+                    }
+                        setIsAuthenticated={setIsAuthenticated}
+                    />
 
-            {/* Chat component */}
-            <div>
-                <Chat
-                    socket={socket}
-                    currentUser={selfUserRef.current}
-                    messages={messages}
-                    chatWith={chat}
-                />
-            </div>
+                    {/* Chat component */}
+                    <div>
+                        <Chat
+                            socket={socket}
+                            currentUser={selfUserRef.current}
+                            messages={messages}
+                            chatWith={chat}
+                        />
+                    </div>
 
-            <h3>{"Online Users:"}</h3>
-            <ul>
-                {[
-                    ...users.filter(user => user === selfUserRef.current),
-                    ...users
-                        .filter(user => user !== selfUserRef.current)
-                        .sort((a, b) => a.localeCompare(b))
-                ].map(user =>
-                    <li key={user}>
-                        <strong>{user}</strong>
-                        {user !== selfUserRef.current && (
-                            <>
-                                <style>
-                                    {`
-                                        @keyframes blink {
-                                            0%, 100% {
-                                                background-color: buttonface;
-                                            }
-                                            50% {
-                                                background-color: #4CAF50;
-                                            }
-                                        }
-
-                                        .blinking {
-                                            animation: blink 1s infinite;
-                                            background-color: #e0e0e0;
-                                        }
-                                    `}
-                                </style>
-
-                                {/** Chat button
-                                 * with blinking effect for new messages */}
-                                <button
-                                    style={{ marginLeft: "0.5rem" }}
-                                    onClick={() => openChat(user)}
-                                    className={
-                                        chatNotify.includes(user)
-                                        ? "blinking"
-                                        : ""
-                                    }
-                                    disabled={user === chat}
-                                >
-                                    {"Chat"}
-                                </button>
-
-                                {/* Invite button */}
-                                <button 
-                                    style={{ marginLeft: "0.5rem" }}
-                                    onClick={
-                                        () => sentInvites.includes(user)
-                                        ? cancelInvite(user)
-                                        : sendInvite(user)
-                                    }
-                                >
-                                    {
-                                        sentInvites.includes(user)
-                                        ? "Cancel Invite"
-                                        : "Send Invite"
-                                    }
-                                </button>
-
-                                {sentInvites.includes(user) && (
-                                    <span
-                                        style={{
-                                            color: "blue",
-                                            marginLeft: "0.5rem"
-                                        }}
-                                    >
-                                        {"Pending..."}
-                                    </span>
-                                )}
-                                {declined.includes(user) && (
-                                    <span
-                                        style={{
-                                            color: "blue",
-                                            marginLeft: "0.5rem"
-                                        }}
-                                    >
-                                        {"Your invite was declined!"}
-                                    </span>
-                                )}
-                            </>
+                    {/* Game invites */}
+                    <div>
+                        {(receivedInvites.length > 0) && (
+                            <h3>{"Game Invites"}</h3>
                         )}
-                    </li>)}
-            </ul>
+                        <ul className="invite-list">
+                            {receivedInvites.map(user => (
+                                <li key={user} className="invite-row">
+                                    <div>
+                                        {"User "}
+                                        <strong
+                                            className="user-name">{
+                                                capitalizeFirstLetter(user)
+                                            }
+                                        </strong>
+                                        {" is inviting you to a game:"}
+                                    </div>
 
-            {/* Game invites modal */}
-            <div className="modal">
-                <h3>{"Game Invites:"}</h3>
-                <ul>
-                    {receivedInvites.map(user => (
-                        <li key={user}>
-                            {"User "}
-                            <strong>{user}</strong>
-                            {" is inviting you to a game:"}
-                            <button
-                                style={{ marginLeft: "0.5rem" }}
-                                onClick={() =>
-                                    handleInviteResponse(user, "accepted")
-                                }>
-                                {"Accept"}
-                            </button>
-                            <button
-                                style={{ marginLeft: "0.5rem" }}
-                                onClick={() =>
-                                    handleInviteResponse(user, "declined")
-                                }>
-                                {"Decline"}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                                    <div className="invite-buttons">
+                                        <button
+                                            className="button"
+                                            onClick={() =>
+                                                handleInviteResponse(
+                                                    user,
+                                                    "accepted"
+                                                )
+                                            }>
+                                            {"Accept"}
+                                        </button>
+                                        <button
+                                            className="button"
+                                            onClick={() =>
+                                                handleInviteResponse(
+                                                    user,
+                                                    "declined"
+                                                )
+                                            }>
+                                            {"Decline"}
+                                        </button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="right-container">
+                    <h3>{"Online Users"}</h3>
+                    <ul className="user-list">
+                        {[
+                            ...users.filter(
+                                user => user === selfUserRef.current
+                            ),
+                            ...users.filter(
+                                user => user === chat
+                            ),
+                            ...users
+                                .filter(user => chatNotify.includes(user))
+                                .sort((a, b) => a.localeCompare(b)),
+                            ...users
+                                .filter(user => user !== selfUserRef.current)
+                                .filter(user => user !== chat)
+                                .filter(user => !chatNotify.includes(user))
+                                .sort((a, b) => a.localeCompare(b))
+                        ].map(user =>
+                            <li key={user} className="user-row">
+                                <div className="user-main">
+                                    <span className="user-name">
+                                        {capitalizeFirstLetter(user)}
+                                    </span>
+                                    {user !== selfUserRef.current && (
+                                        <div className="buttons">
+                                            {/** Chat button
+                                             * with blinking effect for new
+                                             * messages */}
+                                            <button
+                                                onClick={() => openChat(user)}
+                                                className={
+                                                    chatNotify.includes(user)
+                                                    ? "blinking-button"
+                                                    : "button"
+                                                }
+                                                disabled={user === chat}
+                                            >
+                                                {"Chat"}
+                                            </button>
+
+                                            {/* Invite button */}
+                                            <button 
+                                                className="button"
+                                                onClick={
+                                                    () =>
+                                                        sentInvites
+                                                        .includes(user)
+                                                    ? cancelInvite(user)
+                                                    : sendInvite(user)
+                                                }
+                                            >
+                                                {
+                                                    sentInvites.includes(user)
+                                                    ? "Cancel"
+                                                    : "Invite"
+                                                }
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="user-status">
+                                    {sentInvites.includes(user) && (
+                                        <span>
+                                            {"Pending..."}
+                                        </span>
+                                    )}
+                                    {declined.includes(user) && (
+                                        <span>
+                                            {"Your invite was declined!"}
+                                        </span>
+                                    )}
+                                </div>
+                            </li>
+                        )}
+                    </ul>
+                </div>
             </div>
         </div>
     );

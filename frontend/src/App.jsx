@@ -1,14 +1,15 @@
-import { Routes, Route, } from 'react-router-dom';
-import { useEffect, useState  } from 'react';
-import Home from './pages/Home';
-import Register from './pages/Register';
-import Login from './pages/Login';
-import Lobby from './pages/Lobby';
-import Game from './pages/Game';
-import NotFound from './pages/NotFound';
-import api from './api';
+import { Routes, Route, } from "react-router-dom";
+import { useEffect, useState  } from "react";
+import Home from "./pages/Home";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import Lobby from "./pages/Lobby";
+import Game from "./pages/Game";
+import NotFound from "./pages/NotFound";
+import api from "./api";
 import PublicRoute from "./components/PublicRoute"
 import PrivateRoute from "./components/PrivateRoute"
+import "./styles/style.css"
 
 /**
  * App component - Main application entry point.

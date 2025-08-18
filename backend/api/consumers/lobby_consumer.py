@@ -74,7 +74,6 @@ class LobbyConsumer(BaseConsumer):
 
         action = data.get("action")
         if not action:
-            await self.send_error("Missing action.")
             return
 
         actions_map = {
@@ -90,7 +89,7 @@ class LobbyConsumer(BaseConsumer):
         if handler:
             await handler(data)
         else:
-            await self.send_error(f"Unknown action: {action}")
+            return
 
     @BaseConsumer.refresh_ttl_on_action
     async def action_invite(self, data):
@@ -100,7 +99,6 @@ class LobbyConsumer(BaseConsumer):
         username = self.user.username
         to_user = data.get("to")
         if not to_user:
-            await self.send_error("Missing 'to' in invite.")
             return
 
         await InviteService.add_invite(username, to_user)
@@ -127,7 +125,6 @@ class LobbyConsumer(BaseConsumer):
         from_user = data.get("from")
         status = data.get("status")
         if not from_user or not status:
-            await self.send_error("Missing data in invite_response.")
             return
 
         await InviteService.remove_invite(from_user, username)
@@ -169,7 +166,6 @@ class LobbyConsumer(BaseConsumer):
         username = self.user.username
         to_user = data.get("to")
         if not to_user:
-            await self.send_error("Missing 'to' in invite_cancel.")
             return
 
         await InviteService.remove_invite(username, to_user)
@@ -193,7 +189,6 @@ class LobbyConsumer(BaseConsumer):
         receiver = data.get("chatWith")
         msg = data.get("msg")
         if not receiver or not msg:
-            await self.send_error("Missing chat data.")
             return
         
         player1, player2 = sorted([receiver, username])
@@ -217,7 +212,6 @@ class LobbyConsumer(BaseConsumer):
         """
         chat_with = data.get("chatWith")
         if not chat_with:
-            await self.send_error("Missing 'chatWith'.")
             return
 
         player1, player2 = sorted([chat_with, self.user.username])
@@ -362,12 +356,3 @@ class LobbyConsumer(BaseConsumer):
                 "chat_id": chat_id
             }
         )
-
-    async def send_error(self, message):
-        """
-        Sends an error message to the client.
-        """
-        await self.send_json({
-            "type": "error",
-            "message": message
-        })

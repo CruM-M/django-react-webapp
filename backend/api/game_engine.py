@@ -1,3 +1,5 @@
+import random
+
 def create_empty_board():
     """
     Create an empty 10x10 game board.
@@ -51,7 +53,7 @@ class GameEngine:
                 player1: False,
                 player2: False
             },
-            "turn": player1,
+            "turn": random.choice([player1, player2]),
             "winner": None
         }
 
@@ -107,15 +109,6 @@ class GameEngine:
         for i in range(length):
             x = x_start + i if orientation == "horizontal" else x_start
             y = y_start if orientation == "horizontal" else y_start + i
-
-            if not (0 <= x < 10 and 0 <= y < 10):
-                return {"result": "SHIP OUT OF BOUNDS",
-                        "access": "private"}
-            
-            if board[y][x] == "S":
-                return {"result": "SHIP OVERLAPS WITH ANOTHER",
-                        "access": "private"}
-            
             coords.append((x, y))
 
         for x, y in coords:
@@ -276,7 +269,9 @@ class GameEngine:
             "own_board": game["boards"][player],
             "opponent_board": game["boards"][enemy],
             "hits": game["hits"][player],
+            "opponent_hits": game["hits"][enemy],
             "placed_ships": game["placed_ships"][player],
+            "opponent_placed_ships": game["placed_ships"][enemy],
             "ships_left": game["ships_left"][player],
             "ready": game["ready"][player],
             "opponent_ready": game["ready"][enemy],

@@ -1,7 +1,7 @@
 import Board from "../components/Board";
 import Chat from "../components/Chat";
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from "react-router-dom";
+import { data, useNavigate, useParams } from "react-router-dom";
 
 /**
  * Game component - Handles the main game logic and UI.
@@ -24,7 +24,7 @@ function Game() {
      * @constant {number[]} shipLengths - List of ship lengths available
      * for placement
      */
-    const shipLengths = [5, 4, 3, 3, 2];
+    const shipLengths = [2, 3, 3, 4, 5];
 
     // State variables
     const [socket, setSocket] = useState(null);
@@ -37,6 +37,7 @@ function Game() {
     const [placeMode, setPlaceMode] = useState("place");
     const [orientation, setOrientation] = useState("horizontal");
     const [messages, setMessages] = useState([]);
+    const [pendingAction, setPendingAction] = useState(null);
 
     /**
      * Initializes WebSocket connection and sets up event listeners.
@@ -87,10 +88,6 @@ function Game() {
                     setVoteRestart(false);
                     setBothReady(false);
                     break;
-
-                case "error":
-                    alert(data.message);
-                    break;
             }
         };
 
@@ -140,9 +137,13 @@ function Game() {
     };
 
     /**
-     * Handles clicks on the game board cells during ship placement.
-     * @param {number} x - X coordinate
-     * @param {number} y - Y coordinate
+     * Handles clicks on the game board cells during ship placement or removal.
+     * - If in remove mode, checks if the clicked cell contains a ship
+     *   and marks it for removal.
+     * - If in place mode, validates placement at the clicked cell
+     *   and marks it as a pending action.
+     * @param {number} x - X coordinate of the clicked cell
+     * @param {number} y - Y coordinate of the clicked cell
      */
     const handleCellClick = (x, y) => {
         if (state.ready) return;
@@ -150,8 +151,79 @@ function Game() {
         const hasShip = state.placed_ships?.some(ship =>
             ship.coords.some(([sx, sy]) => sx === x && sy === y)
         );
-        if (hasShip && placeMode === "remove") removeShip(x, y);
-        else if (placeMode === "place") placeShip(x, y);
+        if (hasShip && placeMode === "remove") {
+            setPendingAction({type: placeMode, x, y});
+        }
+        else if (selectedShip && placeMode === "place") {
+            if (validatePlacement(x, y)) {
+                setPendingAction({type: placeMode, x, y});
+            }
+        }
+    };
+
+    /**
+     * Confirms a pending action (ship placement or removal).
+     * - If placement: calls `placeShip` with stored coordinates.
+     * - If removal: calls `removeShip` with stored coordinates.
+     * - Resets pending action after execution.
+     */
+    const handleActionConfirm = () => {
+        if (!pendingAction) return;
+        const type = pendingAction.type;
+        const x = pendingAction.x;
+        const y = pendingAction.y;
+
+        if (type === "place") {
+            placeShip(x, y);
+        }
+        else if (type === "remove") {
+            removeShip(x, y);
+        }
+        setPendingAction(null);
+    };
+
+    /**
+     * Validates whether a ship can be placed starting at given coordinates.
+     * - Ensures ship stays within board boundaries.
+     * - Ensures ship does not overlap with existing ships.
+     * 
+     * @param {number} x_start - Starting X coordinate
+     * @param {number} y_start - Starting Y coordinate
+     * @returns {boolean} True if placement is valid, false otherwise
+     */
+    const validatePlacement = (x_start, y_start) => {
+        for (let i = 0; i < selectedShip; i++) {
+            const x = orientation === "horizontal" ? x_start + i : x_start;
+            const y = orientation === "horizontal" ? y_start : y_start + i;
+
+            if (!(x >= 0 && x < 10 && y >= 0 && y < 10)) {
+                sendMessage("SHIP OUT OF BOUNDS")
+                return false;
+            }
+
+            if (state["own_board"][y][x] === "S") {
+                sendMessage("SHIP OVERLAPS WITH ANOTHER")
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    /**
+     * Sends a private system message to the chat via WebSocket.
+     * @param {string} msg - Message content
+     */
+    const sendMessage = (msg) => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                action: "send_msg",
+                sender: "system",
+                msg,
+                access: "private",
+                chatWith: null
+            }));
+        }
     };
 
     /**
@@ -224,130 +296,254 @@ function Game() {
     const opponent = state.players.find(p => p !== state.self);
 
     return (
-        <div>
-            <h2>
-                {"Game: "}
-                {capitalizeFirstLetter(state.self)}
+        <div className="page-container">
+            <h1 className="header-container">
+                <span className="user-name">
+                    {capitalizeFirstLetter(state.self)}
+                </span>
                 {" vs "}
-                {capitalizeFirstLetter(opponent)}
-            </h2>
+                <span className="user-name">
+                    {capitalizeFirstLetter(opponent)}
+                </span>
+            </h1>
 
-            <button onClick={leaveGame}>
-                Return to Lobby
-            </button>
-
-            {/* Chat component */}
-            <div>
-                <Chat
-                    socket={socket}
-                    currentUser={state.self}
-                    messages={messages}
-                    chatWith={null}
-                    game={true}
-                />
-            </div>
-
-            {/* Restart button if game over */}
-            {gameOver && !opponentLeft && (
-                <button
-                    onClick={restartGame}
-                    disabled={voteRestart}
-                >
-                    {voteRestart ? "Voted for rematch" : "Play Again"}
-                </button>
-            )}
-
-            {/* Turn indicator */}
-            {bothReady && !gameOver && !opponentLeft && (
-                <p>
-                    {"It's "}
-                    {
-                        capitalizeFirstLetter(
-                            isPlayerTurn ? "your" : opponent + "'s"
-                        )
-                    }
-                    {" turn"}
-                </p>
-            )}
-
-            {/* Ship placement section */}
-            {!state.ready && !opponentLeft && (
-                <div>
-                    <h3>{"Place your ships"}</h3>
-                    {Array.from(new Set(shipLengths)).map(length => (
+            <div className="main-container">
+                <div className="left-container">
+                    <div>
                         <button
-                            key={length}
-                            onClick={() => {
-                                setSelectedShip(length);
-                                setPlaceMode("place");
-                            }}
-                            disabled={state.ships_left[length] === 0}
+                            className="button"
+                            onClick={leaveGame}
                         >
-                            {length}{"-long "}
-                            {state.ships_left[length] || 0}{" left"}
+                            {"Leave"}
                         </button>
-                    ))}
-                    <button onClick={() => setOrientation(o =>
-                        o === "horizontal"
-                        ? "vertical"
-                        : "horizontal"
-                    )}>
-                        {"Rotate: "}{orientation}
-                    </button>
-                    <button onClick={() => {
-                        setPlaceMode(p =>
-                            p === "place"
-                            ? "remove"
-                            : "place"
-                        );
-                        setSelectedShip(null);
-                    }}>
-                        {"Swap Mode: "}{placeMode}
-                    </button>
-                </div>
-            )}
 
-            {/* Player board */}
-            {!opponentLeft && (
-                <div>
-                    <h3>{"Your Board"}</h3>
-                    <Board
-                        board={state.own_board}
-                        placedShips={state.placed_ships}
-                        onCellClick={bothReady ? null : handleCellClick}
-                        canPlace={!bothReady}
-                        selectedShip={selectedShip}
-                        orientation={orientation}
-                    />
-                </div>
-            )}
+                        {/* Chat component */}
+                        <Chat
+                            socket={socket}
+                            currentUser={state.self}
+                            messages={messages}
+                            chatWith={null}
+                            game={true}
+                        />
+                    </div>
 
-            {/* Opponent board */}
-            {bothReady && !opponentLeft && (
-                <div>
-                    <h3>{"Opponent Board"}</h3>
-                    <Board
-                        board={state.opponent_board}
-                        hits={state.hits}
-                        onCellClick={
-                            !gameOver
-                            ? (isPlayerTurn ? makeMove : null)
-                            : null
-                        }
-                        canPlace={false}
-                    />
-                </div>
-            )}
+                    {/* Ship placement section */}
+                    {!state.ready && !opponentLeft && (
+                        <div>
+                            <h3>{"Place your ships"}</h3>
+                            <div className="ship-button-container">
+                                {Array.from(
+                                    new Set(shipLengths)).map(length => (
+                                    <button
+                                        className={`ship-button ${
+                                            selectedShip === length
+                                            ? "selected"
+                                            : ""
+                                        }`}
+                                        key={length}
+                                        onClick={() => {
+                                            setSelectedShip(length);
+                                            setPlaceMode("place");
+                                        }}
+                                        disabled={
+                                            selectedShip === length
+                                            || state.ships_left[length] === 0
+                                            || pendingAction
+                                        }
+                                    >
+                                        {length}{"-long: "}
+                                        {state.ships_left[length] || 0}{""}
+                                    </button>
+                                ))}
+                                <button
+                                    className="ship-button"
+                                    onClick={() => setOrientation(o =>
+                                        o === "horizontal"
+                                        ? "vertical"
+                                        : "horizontal",
+                                    )}
+                                    disabled={pendingAction}
+                                >
+                                    {orientation.toUpperCase()}
+                                </button>
+                                <button
+                                    className="ship-button"
+                                    onClick={() => {
+                                        setPlaceMode(p =>
+                                            p === "place"
+                                            ? "remove"
+                                            : "place"
+                                        );
+                                        setSelectedShip(null);
+                                    }}
+                                    disabled={pendingAction}
+                                >
+                                    {placeMode.toUpperCase()}
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-            {/* Ready button */}
-            {!bothReady && !opponentLeft && (
-                <button 
-                    onClick={() => {setReady(); setSelectedShip(null);}} 
-                    disabled={!allShipsPlaced() || state.ready}
-                >
-                    {"I'm Ready"}
-                </button>
-            )}
+                    {bothReady
+                        && !opponentLeft
+                        && (
+                        <div className="small-board-container">
+                            {/* Player board */}
+                            {bothReady && !opponentLeft && (
+                                <div>
+                                    <h3>{"Your Board"}</h3>
+                                    <Board
+                                        board={state.own_board}
+                                        boardType={"small"}
+                                        hits={state.opponent_hits}
+                                        placedShips={state.placed_ships}
+                                        onCellClick={bothReady
+                                            ? null
+                                            : handleCellClick
+                                        }
+                                        canClick={!bothReady}
+                                        selectedShip={selectedShip}
+                                        orientation={orientation}
+                                        placeMode={placeMode}
+                                        pendingAction={pendingAction}
+                                    />
+                                </div>
+                            )}
+                            <div className="turn-container">
+                                {/* Turn indicator */}
+                                {bothReady && !gameOver && !opponentLeft && (
+                                    <p className="turn-state">
+                                        <span>
+                                            {
+                                                isPlayerTurn
+                                                ? "YOUR"
+                                                : "ENEMY"
+                                            }
+                                        </span>
+                                        <span>{"TURN"}</span>
+                                    </p>
+                                )}
+                                {/* Winner indicator */}
+                                {bothReady && gameOver && !opponentLeft && (
+                                    <p className="turn-state">
+                                        <span>{"YOU"}</span>
+                                        <span>
+                                            {
+                                                state.winner === state.self
+                                                ? "WON!"
+                                                : "LOST!"
+                                            }
+                                        </span>
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="right-container">
+                    {/* Player board */}
+                    {!bothReady && !opponentLeft && (
+                        <div>
+                            <h3>{"Your Board"}</h3>
+                            <Board
+                                board={state.own_board}
+                                boardType={"big"}
+                                hits={state.opponent_hits}
+                                placedShips={state.placed_ships}
+                                onCellClick={bothReady
+                                    ? null
+                                    : handleCellClick
+                                }
+                                canClick={!bothReady}
+                                selectedShip={selectedShip}
+                                orientation={orientation}
+                                placeMode={placeMode}
+                                pendingAction={pendingAction}
+                            />
+                        </div>
+                    )}
+
+                    {/* Opponent board */}
+                    {bothReady && !opponentLeft && (
+                        <div>
+                            <h3>{"Opponent Board"}</h3>
+                            <Board
+                                board={state.opponent_board}
+                                boardType={"opponent"}
+                                hits={state.hits}
+                                opponentPlacedShips={
+                                    state.opponent_placed_ships
+                                }
+                                onCellClick={
+                                    !gameOver
+                                    ? (isPlayerTurn ? makeMove : null)
+                                    : null
+                                }
+                                canClick={!gameOver}
+                            />
+                        </div>
+                    )}
+
+                    {(!state.ready
+                        || pendingAction
+                        || (gameOver && !opponentLeft)
+                    ) && (
+                        <div className="action-button-container">
+                            {/* Ready button */}
+                            {!state.ready
+                                && !opponentLeft
+                                && allShipsPlaced()
+                                && !pendingAction
+                                && (
+                                <button
+                                    className="button"
+                                    onClick={() => {
+                                        setReady();
+                                        setSelectedShip(null);
+                                    }}
+                                >
+                                    {"I'm Ready"}
+                                </button>
+                            )}
+
+                            {pendingAction && (
+                                <div className="board-button-container">
+                                    <button
+                                        className="button"
+                                        onClick={() => handleActionConfirm()}
+                                    >
+                                        {"Confirm"}
+                                    </button>
+                                    <button
+                                        className="button"
+                                        onClick={() => {
+                                            setPendingAction(null);
+                                            setSelectedShip(null);
+                                        }}
+                                    >
+                                        {"Cancel"}
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Restart button if game over */}
+                            {gameOver && !opponentLeft && (
+                                <button
+                                    className="button"
+                                    onClick={restartGame}
+                                    disabled={voteRestart}
+                                >
+                                    {voteRestart
+                                        ? "Voted for rematch"
+                                        : "Play Again"
+                                    }
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

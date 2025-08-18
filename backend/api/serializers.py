@@ -46,4 +46,8 @@ class UserSerializer(serializers.ModelSerializer):
         """
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("Username is already taken.")
+        if len(value) > 12:
+            raise serializers.ValidationError(
+                "Username must be at most 12 characters long."
+            )
         return value

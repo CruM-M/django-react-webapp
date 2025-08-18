@@ -68,49 +68,56 @@ const Form = ({ route, method,  setIsAuthenticated }) => {
         }
     };
 
-    return <form onSubmit={handleForm} className="form-container">
-        <h1>{method_name}</h1>
+    return <form onSubmit={handleForm}>
+        <h1 className="header-container">{method_name}</h1>
 
-         {/* Navigation button to return home */}
-        <div>
-            <button
-                className="form-button"
-                type="button"
-                onClick={() => navigate("/")}
-            >
-                {"Home"}
-            </button>
-        </div>
-
-        {/* Username input */}
-        <input 
-            className="form-input"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Username"
-        />
-
-        {/* Password input */}
-        <input 
-            className="form-input"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-        />
-
-        {/* Submit button */}
-        <button className="form-button" type="submit">
-            {method_name}
-        </button>
-
-        {/* Display request errors */}
-        {requestErrors && (
-            <div>
-                <p>{requestErrors}</p>
+        <div className="form-container">
+            <div className="navigate-button-container">
+                {/* Navigation button to return home */}
+                <button
+                    className="button"
+                    type="button"
+                    onClick={() => navigate("/")}
+                >
+                    {"Home"}
+                </button>
             </div>
-        )}
+
+            {/* Username input */}
+            <input
+                className="form-input"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+            />
+
+            {/* Password input */}
+            <input
+                className="form-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+            />
+
+            <div className="form-button-container">
+                {/* Submit button */}
+                <button
+                    className="button"
+                    type="submit"
+                >
+                    {method_name}
+                </button>
+            </div>
+
+            {/* Display request errors */}
+            {requestErrors && (
+                <div className="request-errors">
+                    <p>{requestErrors}</p>
+                </div>
+            )}
+        </div>
     </form>
 }
 
