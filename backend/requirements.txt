@@ -1,8 +1,8 @@
-Django
+django
 djangorestframework
 django-cors-headers
 python-dotenv
 channels
 channels_redis
-redis-server
 daphne
+redis
