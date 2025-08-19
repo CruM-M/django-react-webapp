@@ -87,15 +87,3 @@ class CheckAuthView(APIView):
             return Response({"isAuthenticated": True})
         else:
             return Response({"isAuthenticated": False})
-
-class UserListView(APIView):
-    """
-    Returns a list of all registered users.
-
-    - Accepts GET request.
-    - Serializes all users and returns them as JSON.
-    """
-    def get(self, request):
-        users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)

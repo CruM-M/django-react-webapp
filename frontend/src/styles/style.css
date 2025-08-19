@@ -1,15 +1,33 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap");
 
+:root {
+  --base-color: #26e936;
+  --container-background-color: #0f1812;
+  --disabled-backround-color: #26e93670;
+}
+
 html {
     font-family: "Press Start 2P", system-ui;
     font-weight: 400;
     font-style: normal;
-    font-size: clamp(0.60rem, 1.4vw, 1.4rem);
+    font-size: 1.9vmin;
+}
+
+@media (max-aspect-ratio: 3/4) {
+    html {
+        font-size: 1.7vmin;
+    }
+}
+
+@media (max-aspect-ratio: 3/5) {
+    html {
+        font-size: 2.6vmin;
+    }
 }
 
 body {
-    color: #26e936;
-    background-color: #161d25;
+    color: var(--base-color);
+    background-color: #0c1118;
     display: flex;
     justify-content: center;
 }
@@ -28,11 +46,7 @@ h3 {
     justify-content: center;
 }
 
-.left-container {
-    width: 30rem;
-    padding: 1rem;
-}
-
+.left-container,
 .right-container {
     width: 30rem;
     padding: 1rem;
@@ -41,7 +55,7 @@ h3 {
 .form-input {
     font-family: inherit;
     font-size: inherit;
-    background-color: #1c221e;
+    background-color: var(--container-background-color);
     border: 0.125rem solid #1ddd51;
     border-radius: 0.95rem;
     box-sizing: border-box;
@@ -58,7 +72,7 @@ h3 {
 .chat-input {
     font-family: inherit;
     font-size: 0.8rem;
-    background-color: #1c221e;
+    background-color: var(--container-background-color);
     border: 0.125rem solid #1ddd51;
     border-radius: 0.95rem;
     box-sizing: border-box;
@@ -73,11 +87,11 @@ h3 {
     font-family: inherit;
     font-size: inherit;
     text-align: center;
-    background-color: #1c221e;
-    border: 0.125rem solid #26e936;
+    background-color: var(--container-background-color);
+    border: 0.125rem solid var(--base-color);
     border-radius: 0.95rem;
     box-sizing: border-box;
-    color: #26e936;
+    color: var(--base-color);
     cursor: pointer;
     display: inline-block;
     margin: 0.2rem;
@@ -95,11 +109,11 @@ h3 {
     font-family: inherit;
     font-size: inherit;
     text-align: center;
-    background-color: #1c221e;
-    border: 0.125rem solid #26e936;
+    background-color: var(--container-background-color);
+    border: 0.125rem solid var(--base-color);
     border-radius: 0.95rem;
     box-sizing: border-box;
-    color: #26e936;
+    color: var(--base-color);
     cursor: pointer;
     display: inline-block;
     margin: 0.2rem;
@@ -112,17 +126,19 @@ h3 {
     will-change: transform;
 }
 
-.ship-button.selected {
+.ship-button.selected:disabled {
+    pointer-events: none;
+    background-color: var(--disabled-backround-color);
     color: #fff;
-    background-color: #26e93681;
+    border-color: var(--base-color);
 }
 
 @keyframes blink {
     0%, 100% {
-        background-color: #1c221e;
+        background-color: var(--container-background-color);
     }
     50% {
-        background-color: #26e93670;
+        background-color: var(--disabled-backround-color);
         color: #fff;
     }
 }
@@ -132,11 +148,11 @@ h3 {
     font-family: inherit;
     font-size: inherit;
     text-align: center;
-    background-color: #1c221e;
-    border: 0.125rem solid #26e936;
+    background-color: var(--container-background-color);
+    border: 0.125rem solid var(--base-color);
     border-radius: 0.95rem;
     box-sizing: border-box;
-    color: #26e936;
+    color: var(--base-color);
     cursor: pointer;
     display: inline-block;
     margin: 0.2rem;
@@ -153,14 +169,14 @@ h3 {
 .ship-button:disabled,
 .button:disabled {
     pointer-events: none;
-    color: #26e93670;
-    border-color: #26e93670;
+    color: var(--disabled-backround-color);
+    border-color: var(--disabled-backround-color);
 }
 
 .ship-button:hover,
 .button:hover {
-    color: #fff;
     background-color: #26e93681;
+    color: #fff;
     box-shadow: rgba(0, 0, 0, 0.25) 0 0.5rem 1rem;
     transform: translateY(-0.125rem);
 }
@@ -209,7 +225,7 @@ h3 {
     flex-direction: column;
     font-family: inherit;
     font-size: inherit;
-    background-color: #1c221e;
+    background-color: #0e1611;
     border: 0.125rem solid #1ddd51;
     border-radius: 0.95rem;
     box-sizing: border-box;
@@ -230,7 +246,7 @@ h3 {
 
 .chat-target {
     font-size: 0.6rem;
-    background-color: #1c221e;
+    background-color: var(--container-background-color);
     padding: 0.4rem;
     border-bottom: 0.125rem solid;
     line-height: 1.4;
@@ -246,7 +262,7 @@ h3 {
     flex: 1;
     margin-top: 0.3rem;
     scrollbar-width: thin;
-    scrollbar-color: #26e936 transparent;
+    scrollbar-color: var(--base-color) transparent;
 }
 
 .message-list > div:first-child {
@@ -258,11 +274,11 @@ h3 {
 }
 
 .message-list::-webkit-scrollbar-track {
-    background-color: #1c221e;
+    background-color: var(--container-background-color);
 }
 
 .message-list::-webkit-scrollbar-thumb {
-    background-color: #26e936;
+    background-color: var(--base-color);
     border-radius: 0.4rem;
 }
 
@@ -323,12 +339,12 @@ h3 {
 }
 
 .board-table {
-    background-color: #1c221e;
-    border: 0.125rem solid #1ddd51;
+    background-color: var(--container-background-color);
+    border: 0.125rem solid var(--base-color);
     border-radius: 0.95rem;
     border-collapse: collapse;
     overflow: hidden;
-    box-shadow: 0 0 0 0.125rem #1ddd51;
+    box-shadow: 0 0 0 0.125rem var(--base-color);
     width: 30rem;
     height: 30rem;
 }
@@ -339,7 +355,8 @@ h3 {
 }
 
 .board-table td {
-    border: 0.125rem solid #206d26;
+    background-color: var(--container-background-color);
+    border: 0.125rem solid var(--disabled-backround-color);
     cursor: pointer;
     transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
 }

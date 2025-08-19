@@ -384,9 +384,7 @@ function Game() {
                         </div>
                     )}
 
-                    {bothReady
-                        && !opponentLeft
-                        && (
+                    {bothReady && !opponentLeft && (
                         <div className="small-board-container">
                             {/* Player board */}
                             {bothReady && !opponentLeft && (
@@ -507,7 +505,7 @@ function Game() {
                                 </button>
                             )}
 
-                            {pendingAction && (
+                            {pendingAction && !opponentLeft &&(
                                 <div className="board-button-container">
                                     <button
                                         className="button"

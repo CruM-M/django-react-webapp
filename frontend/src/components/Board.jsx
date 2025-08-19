@@ -108,7 +108,6 @@ const Board = ({
                 }}
                 onContextMenu={(e) => { e.preventDefault(); }}
                 style={{
-                    backgroundColor: "#1c221e",
                     cursor: canClick && !pendingAction &&
                     (
                         selectedShip !== null 
@@ -162,8 +161,8 @@ const Board = ({
                     <div
                         style={{
                             backgroundColor: !ship && (placeMode === "place")
-                                ? "rgba(144,238,144,0.5)"
-                                : "rgba(238, 144, 144, 0.5)",
+                                ? "rgba(110, 231, 110, 0.7)"
+                                : "rgba(228, 110, 110, 0.7)",
                             width: "100%",
                             height: "100%",
                             position: "absolute",

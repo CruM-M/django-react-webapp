@@ -13,9 +13,6 @@ urlpatterns = [
     # Endpoint to get CSRF token for secure requests.
     path("csrf/", get_csrf),
 
-    # Returns a list of all registered users (Admin purpose).
-    path("user-list/", UserListView.as_view(), name="user_list"),
-
     # Registers a new user.
     path("register/", CreateUserView.as_view(), name="register"),
 
