@@ -189,7 +189,10 @@ class GameConsumer(BaseConsumer):
             result["result"],
             result["access"]
         )
-        await self.send_game_state()
+        await self.channel_layer.group_send(
+            self.game_id,
+            {"type": "game.update"}
+        )
 
     @BaseConsumer.refresh_ttl_on_action
     async def action_remove_ship(self, data):
@@ -208,7 +211,10 @@ class GameConsumer(BaseConsumer):
             result["result"],
             result["access"]
         )
-        await self.send_game_state()
+        await self.channel_layer.group_send(
+            self.game_id,
+            {"type": "game.update"}
+        )
 
     @BaseConsumer.refresh_ttl_on_action
     async def action_set_ready(self, data):
@@ -315,14 +321,15 @@ class GameConsumer(BaseConsumer):
         players_status = await RedisService.get_all_hash(self.game_id)
         parsed_status = {p: json.loads(s) for p, s in players_status.items()}
 
-        opponent = [p for p in state["players"] if p != self.user.username][0]
-        opponent_status = parsed_status.get(opponent, {})
-        opponent_left = opponent_status.get("full_disconnect", False)
+        players_disconnect = {
+            player: status.get("full_disconnect", False)
+            for player, status in parsed_status.items()
+        }
 
         await self.send_json({
             "type": "game_state",
             "state": state,
-            "opponent_left": opponent_left
+            "players_disconnect": players_disconnect
         })
 
     async def game_update(self, event):

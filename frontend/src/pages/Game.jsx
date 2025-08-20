@@ -29,6 +29,7 @@ function Game() {
     // State variables
     const [socket, setSocket] = useState(null);
     const [state, setState] = useState(null);
+    const [opponent, setOpponent] = useState(null)
     const [selectedShip, setSelectedShip] = useState(null);
     const [gameOver, setGameOver] = useState(false);
     const [voteRestart, setVoteRestart] = useState(false);
@@ -70,7 +71,15 @@ function Game() {
             switch(data.type) {
                 case "game_state":
                     setState(data.state);
-                    setOpponentLeft(data.opponent_left);
+                    const opponent = data.state.players.find(
+                        p => p !== data.state.self
+                    );
+                    setOpponent(opponent);
+                    if (data.players_disconnect[data.state.self]) {
+                        navigate("/lobby", { replace: true });
+                    }  else if (data.players_disconnect[opponent]) {
+                        setOpponentLeft(true);
+                    }
                     if (data.state.ready && data.state.opponent_ready) {
                         setBothReady(true);
                     }
@@ -293,7 +302,6 @@ function Game() {
     // If game state is not loaded yet, show loading text
     if (!state) return <div>{"Loading game..."}</div>;
     const isPlayerTurn = state.turn === state.self;
-    const opponent = state.players.find(p => p !== state.self);
 
     return (
         <div className="page-container">

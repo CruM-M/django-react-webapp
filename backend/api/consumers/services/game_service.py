@@ -74,17 +74,6 @@ class GameService:
         return all(json.loads(v)[key] for v in players.values())
 
     @staticmethod
-    async def delete_player_status(game_id, player):
-        """
-        Delete the status entry of a specific player in a game.
-
-        Args:
-            game_id (str): The unique identifier for the game.
-            player (str): The player's username.
-        """
-        await RedisService.delete_from_hash(game_id, player)
-
-    @staticmethod
     async def delete_game_status(game_id):
         """
         Delete all status data for a game.

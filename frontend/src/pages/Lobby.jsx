@@ -111,6 +111,11 @@ function Lobby({ setIsAuthenticated }) {
                         ));
                     }
                     break;
+
+                case "in_game":
+                    // Redirect to game if player is in one
+                    navigate(`/game/${data.game_id}`, { replace: true });
+                    break;
             }
         };
 

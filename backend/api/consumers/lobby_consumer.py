@@ -5,6 +5,7 @@ from .services.redis_service import RedisService
 from .services.chat_service import ChatService
 from .services.invite_service import InviteService
 from .services.lobby_service import LobbyService
+from .services.game_service import GameService
 from ..game_engine import game_engine
 
 class LobbyConsumer(BaseConsumer):
@@ -26,6 +27,19 @@ class LobbyConsumer(BaseConsumer):
             return
 
         await self.accept()
+
+        game_id = await self.find_game_id()
+        if game_id:
+            status = await GameService.get_player_status(
+                game_id,
+                self.user.username
+            )
+            if status["full_disconnect"] == False:
+                await self.send_json({
+                    "type": "in_game",
+                    "game_id": game_id
+                })
+
         await self.channel_layer.group_add(
             "lobby_users",
             self.channel_name
@@ -140,6 +154,10 @@ class LobbyConsumer(BaseConsumer):
             player1, player2 = sorted([from_user, username])
             game_id = f"game-{player1}-{player2}"
             game_engine.create_game(game_id, player1, player2)
+            await self.channel_layer.group_send(
+                    f"user_{self.user.username}",
+                    {"type": "send.in.game"}
+                )
 
         elif status == "declined":
             await self.channel_layer.group_send(
@@ -356,3 +374,26 @@ class LobbyConsumer(BaseConsumer):
                 "chat_id": chat_id
             }
         )
+
+    async def send_in_game(self, game_id, event):
+        """
+        Sends a notification to the user that he's in a game.
+        """
+        await self.send_json({
+            "type": "in_game",
+            "game_id": game_id
+        })
+
+    async def find_game_id(self):
+        """
+        Checks if the user belongs to any games.
+
+        Returns:
+            string: Game id if game exists, None otherwise.
+        """
+        active_game_id = None
+        for game_id, game in game_engine.games.items():
+            if self.user.username in game["players"]:
+                active_game_id = game_id
+                break
+        return active_game_id
