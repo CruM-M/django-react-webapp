@@ -191,3 +191,34 @@ class RedisService:
         """
         conn = await cls.get_redis()
         await conn.hdel(name, key)
+
+    @classmethod
+    async def incr_user_connections(cls, page, user_id):
+        """
+        Increment the active WebSocket connections count for a user.
+
+        Args:
+            user_id (str): User identifier.
+        """
+        conn = await cls.get_redis()
+        key = f"{page}:{user_id}:connections"
+        await conn.incr(key)
+
+    @classmethod
+    async def decr_user_connections(cls, page, user_id):
+        """
+        Decrement the active WebSocket connections count for a user.
+
+        Args:
+            user_id (str): User identifier.
+
+        Returns:
+            int: Remaining number of active connections.
+        """
+        conn = await cls.get_redis()
+        key = f"{page}:{user_id}:connections"
+        count = await conn.decr(key)
+        if count < 0:
+            await conn.set(key, 0)
+            count = 0
+        return int(count)

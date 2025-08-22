@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { capitalizeFirstLetter } from "../utils";
 
 /**
  * Chat component - Handles in-game or lobby chat functionality.
@@ -31,16 +32,6 @@ const Chat = ({socket, currentUser, messages, chatWith, game}) => {
             messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
     }, [messages]);
-
-    /**
-     * Capitalizes the first letter of a given string.
-     * @param {string} string - Input string
-     * @returns {string} Formatted string with first letter uppercase
-     */
-    const capitalizeFirstLetter = (string) => {
-        if (!string) return "";
-        return string.charAt(0).toUpperCase() + string.slice(1);
-    }
 
     /**
      * Sends a message via WebSocket to the server.

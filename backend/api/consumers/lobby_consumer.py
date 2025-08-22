@@ -51,6 +51,7 @@ class LobbyConsumer(BaseConsumer):
 
         await LobbyService.add_user(self.user.username)
         await self.refresh_user_ttl()
+        await RedisService.incr_user_connections("lobby", self.user.username)
         await self.group_send_user_list()
         await self.send_invite_state()
 
@@ -71,10 +72,14 @@ class LobbyConsumer(BaseConsumer):
             self.channel_name
         )
 
-        await LobbyService.remove_user(self.user.username)
-        await self.group_send_user_list()
-
-        asyncio.create_task(self.cleanup_lobby_chat())
+        remaining = await RedisService.decr_user_connections(
+            "lobby",
+            self.user.username
+        )
+        if remaining == 0:
+            await LobbyService.remove_user(self.user.username)
+            await self.group_send_user_list()
+            asyncio.create_task(self.cleanup_lobby_chat())
 
     async def receive(self, text_data):
         """
@@ -156,7 +161,10 @@ class LobbyConsumer(BaseConsumer):
             game_engine.create_game(game_id, player1, player2)
             await self.channel_layer.group_send(
                     f"user_{self.user.username}",
-                    {"type": "send.in.game"}
+                    {
+                        "type": "send.in.game",
+                        "game_id": game_id
+                    }
                 )
 
         elif status == "declined":
@@ -375,13 +383,13 @@ class LobbyConsumer(BaseConsumer):
             }
         )
 
-    async def send_in_game(self, game_id, event):
+    async def send_in_game(self, event):
         """
         Sends a notification to the user that he's in a game.
         """
         await self.send_json({
             "type": "in_game",
-            "game_id": game_id
+            "game_id": event["game_id"]
         })
 
     async def find_game_id(self):

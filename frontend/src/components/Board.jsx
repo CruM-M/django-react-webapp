@@ -89,7 +89,7 @@ const Board = ({
      * @returns {JSX.Element} Rendered cell
      */
     const renderCell = (x, y) => {
-        const hit = hits?.[y]?.[x] || "";
+        const hit = hits[y][x];
         const ship = placedShips?.find(ship =>
             ship.coords.some(([sx, sy]) => sx === x && sy === y)
         );
@@ -108,9 +108,10 @@ const Board = ({
                 }}
                 onContextMenu={(e) => { e.preventDefault(); }}
                 style={{
-                    cursor: canClick && !pendingAction &&
-                    (
-                        selectedShip !== null 
+                    cursor: canClick
+                    && !pendingAction
+                    && (
+                        selectedShip !== null
                         || (placeMode === "remove" && ship)
                     )
                     ? "pointer"
@@ -160,7 +161,11 @@ const Board = ({
                 {isHovering && (
                     <div
                         style={{
-                            backgroundColor: !ship && (placeMode === "place")
+                            backgroundColor: 
+                                (
+                                    (!ship && (placeMode === "place"))
+                                    || (hit === "" && placeMode === "move")
+                                )
                                 ? "rgba(110, 231, 110, 0.7)"
                                 : "rgba(228, 110, 110, 0.7)",
                             width: "100%",
@@ -202,7 +207,7 @@ const Board = ({
             if (ship && ship.coords.some(
                 ([sx, sy]) => sx === x && sy === y)
             ) return true;
-        } else {
+        } else if (placeMode === "place") {
             if (selectedShip === null) return false;
 
             for (let i = 0; i < selectedShip; i++) {
@@ -210,7 +215,9 @@ const Board = ({
                 const cy = orientation === "vertical" ? hy + i : hy;
                 if (cx === x && cy === y) return true;
             }
-        }
+        } else if (placeMode === "move") {
+            if (hx === x && hy === y) return true;
+        } 
         return false;
     };
 

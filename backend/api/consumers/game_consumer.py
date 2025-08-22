@@ -57,6 +57,7 @@ class GameConsumer(BaseConsumer):
         )
 
         await self.set_temp_disconnect(False)
+        await RedisService.incr_user_connections("game", self.user.username)
         await self.refresh_user_ttl()
 
         await self.channel_layer.group_send(
@@ -77,6 +78,10 @@ class GameConsumer(BaseConsumer):
         if not self.user.is_authenticated or not self.connected_to_game:
             return
 
+        await self.channel_layer.group_discard(
+            self.game_id,
+            self.channel_name
+        )
         await self.set_temp_disconnect(True)
         self.delayed_task = asyncio.create_task(self.delayed_leave())
 
@@ -89,19 +94,30 @@ class GameConsumer(BaseConsumer):
             self.game_id,
             self.user.username
         )
-
         if status["full_disconnect"]:
-            await self.handle_full_disconnect()
+            remaining = await RedisService.decr_user_connections(
+                "game",
+                self.user.username
+            )
+            print(f"Remaining {remaining}, Full")
+            if remaining == 0:
+                await self.handle_full_disconnect()
         else:
             await asyncio.sleep(10)
-
+            
             status = await GameService.get_player_status(
                 self.game_id,
                 self.user.username
             )
+            remaining = await RedisService.decr_user_connections(
+                "game",
+                self.user.username
+            )
             if status["temp_disconnect"]:
-                await self.set_full_disconnect(True)
-                await self.handle_full_disconnect()
+                print(f"Remaining {remaining}, Temp")
+                if remaining == 0:
+                    await self.set_full_disconnect(True)
+                    await self.handle_full_disconnect()
 
     async def handle_full_disconnect(self):
         """
@@ -112,23 +128,20 @@ class GameConsumer(BaseConsumer):
             hasattr(self, "delayed_task")
             and self.delayed_task is not asyncio.current_task()
         ):
+            print("Has attr delayed_task")
             self.delayed_task.cancel()
-
-        await self.channel_layer.group_discard(
-            self.game_id,
-            self.channel_name
-        )
-        asyncio.create_task(self.cleanup_lobby_chat())
 
         if await GameService.all_status_true(
             self.game_id,
             "full_disconnect"
         ):
+            print("All full disconnect")
             await ChatService.delete_chat(f"gamechat:{self.game_id}")
             await GameService.delete_game_status(self.game_id)
             game_engine.end_game(self.game_id)
             return
 
+        print("Sending Left Message")
         await self.push_message(
             "system",
             f"{str(self.user.username).upper()} HAS LEFT THE GAME",
@@ -138,6 +151,7 @@ class GameConsumer(BaseConsumer):
             self.game_id,
             {"type": "game.update"}
         )
+        asyncio.create_task(self.cleanup_lobby_chat())
 
     async def receive(self, text_data):
         """
@@ -269,12 +283,18 @@ class GameConsumer(BaseConsumer):
             return
 
         player1, player2 = sorted(game["players"])
+        if not (game["ready"][player1] and game["ready"][player2]):
+            return
 
-        await self.set_restart(True)
+        await self.set_restart(self.user.username, True)
         await self.push_message(
                 "system",
                 f"{str(self.user.username).upper()} HAS VOTED FOR A REMATCH",
                 "public"
+            )
+        await self.channel_layer.group_send(
+                self.game_id,
+                {"type": "game.update"}
             )
 
         if await GameService.all_status_true(self.game_id, "restart"):
@@ -282,6 +302,8 @@ class GameConsumer(BaseConsumer):
                 self.game_id,
                 {"type": "send.restart"}
             )
+            await self.set_restart(player1, False)
+            await self.set_restart(player2, False)
             game_engine.create_game(self.game_id, player1, player2)
             await self.channel_layer.group_send(
                 self.game_id,
@@ -307,6 +329,10 @@ class GameConsumer(BaseConsumer):
         Marks user as fully disconnected on leave action.
         """
         await self.set_full_disconnect(True)
+        await self.channel_layer.group_send(
+            self.game_id,
+            {"type": "game.update"}
+        )
 
     async def send_game_state(self):
         """
@@ -326,10 +352,15 @@ class GameConsumer(BaseConsumer):
             for player, status in parsed_status.items()
         }
 
+        player_restart = parsed_status.get(self.user.username, {}).get(
+            "restart", False
+        )
+
         await self.send_json({
             "type": "game_state",
             "state": state,
-            "players_disconnect": players_disconnect
+            "players_disconnect": players_disconnect,
+            "player_restart": player_restart
         })
 
     async def game_update(self, event):
@@ -409,13 +440,13 @@ class GameConsumer(BaseConsumer):
             value
         )
 
-    async def set_restart(self, value: bool):
+    async def set_restart(self, player, value: bool):
         """
-        Set restart flag for player.
+        Set restart flag for both players.
         """
         await GameService.set_status(
             self.game_id,
-            self.user.username,
+            player,
             "restart",
             value
         )

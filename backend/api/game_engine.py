@@ -109,6 +109,14 @@ class GameEngine:
         for i in range(length):
             x = x_start + i if orientation == "horizontal" else x_start
             y = y_start if orientation == "horizontal" else y_start + i
+            if not(0 <= x < 10 and 0 <= y < 10):
+                return {"result": f"SHIP OUT OF BOUNDS",
+                        "access": "private"}
+
+            if board[y][x] == "S":
+                return {"result": f"SHIP OVERLAPS WITH ANOTHER",
+                        "access": "private"}
+
             coords.append((x, y))
 
         for x, y in coords:
@@ -206,13 +214,17 @@ class GameEngine:
         if not game:
             return {"result": "GAME NOT FOUND",
                     "access": "private"}
-        
+
+        if not game["turn"] == player:
+            return {"result": "NOT YOUR TURN",
+                    "access": "private"}
+
         enemy = [p for p in game["players"] if p != player][0]
         enemy_board = game["boards"][enemy]
         hit_board = game["hits"][player]
 
         if hit_board[y][x] != "":
-            return {"result": "ALREADY SHOT THIS POSITION - CHOOSE ANOTHER",
+            return {"result": "ALREADY SHOT THIS POSITION",
                     "access": "private"}
 
         if enemy_board[y][x] == "S":

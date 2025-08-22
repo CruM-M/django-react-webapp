@@ -1,7 +1,8 @@
 import Board from "../components/Board";
 import Chat from "../components/Chat";
 import { useEffect, useState } from 'react';
-import { data, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { capitalizeFirstLetter } from "../utils";
 
 /**
  * Game component - Handles the main game logic and UI.
@@ -77,8 +78,13 @@ function Game() {
                     setOpponent(opponent);
                     if (data.players_disconnect[data.state.self]) {
                         navigate("/lobby", { replace: true });
-                    }  else if (data.players_disconnect[opponent]) {
+                    }
+                    else if (data.players_disconnect[opponent]) {
                         setOpponentLeft(true);
+                    }
+                    if (data.player_restart) {
+                        console.log("Restart True")
+                        setVoteRestart(true);
                     }
                     if (data.state.ready && data.state.opponent_ready) {
                         setBothReady(true);
@@ -126,16 +132,6 @@ function Game() {
     }, []);
 
     /**
-     * Capitalizes the first letter of a given string.
-     * @param {string} string - Input string
-     * @returns {string} Formatted string with first letter uppercase
-     */
-    const capitalizeFirstLetter = (string) => {
-        if (!string) return "";
-        return string.charAt(0).toUpperCase() + string.slice(1);
-    }
-
-    /**
      * Sends an action through the WebSocket connection.
      * @param {Object} data - The data to send
      */
@@ -155,8 +151,6 @@ function Game() {
      * @param {number} y - Y coordinate of the clicked cell
      */
     const handleCellClick = (x, y) => {
-        if (state.ready) return;
-
         const hasShip = state.placed_ships?.some(ship =>
             ship.coords.some(([sx, sy]) => sx === x && sy === y)
         );
@@ -164,9 +158,20 @@ function Game() {
             setPendingAction({type: placeMode, x, y});
         }
         else if (selectedShip && placeMode === "place") {
-            if (validatePlacement(x, y)) {
-                setPendingAction({type: placeMode, x, y});
+            const result = validatePlacement(x, y);
+            if (!result.valid) {
+                sendMessage(result.reason);
+                return;
             }
+            setPendingAction({type: placeMode, x, y});
+        }
+        else if (bothReady) {
+            const result = validateMove(x, y);
+            if (!result.valid) {
+                sendMessage(result.reason);
+                return;
+            }
+            setPendingAction({type: "move", x, y});
         }
     };
 
@@ -188,17 +193,21 @@ function Game() {
         else if (type === "remove") {
             removeShip(x, y);
         }
+        else if (type === "move") {
+            makeMove(x, y);
+        }
         setPendingAction(null);
     };
 
     /**
      * Validates whether a ship can be placed starting at given coordinates.
-     * - Ensures ship stays within board boundaries.
-     * - Ensures ship does not overlap with existing ships.
+     * - Checks if the ship stays within the board boundaries.
+     * - Checks if the ship overlaps with any existing ships.
      * 
      * @param {number} x_start - Starting X coordinate
      * @param {number} y_start - Starting Y coordinate
-     * @returns {boolean} True if placement is valid, false otherwise
+     * @returns {{valid: boolean, reason?: string}} Validation result with
+     * optional reason if invalid
      */
     const validatePlacement = (x_start, y_start) => {
         for (let i = 0; i < selectedShip; i++) {
@@ -206,17 +215,34 @@ function Game() {
             const y = orientation === "horizontal" ? y_start : y_start + i;
 
             if (!(x >= 0 && x < 10 && y >= 0 && y < 10)) {
-                sendMessage("SHIP OUT OF BOUNDS")
-                return false;
+                return { valid: false, reason: "SHIP OUT OF BOUNDS" };
             }
 
             if (state["own_board"][y][x] === "S") {
-                sendMessage("SHIP OVERLAPS WITH ANOTHER")
-                return false;
+                return { valid: false, reason: "SHIP OVERLAPS WITH ANOTHER" };
             }
         }
 
-        return true;
+        return { valid: true };
+    };
+
+    /**
+     * Validates whether a move (shot) is allowed.
+     * - Ensures the targeted cell has not been attacked before.
+     * 
+     * @param {number} x_start - X coordinate
+     * @param {number} y_start - Y coordinate
+     * @returns {{valid: boolean, reason?: string}} Validation result with
+     * optional reason if invalid
+     */
+    const validateMove = (x, y) => {
+        const hit = state.hits[y][x];
+
+        if (hit === "X" || hit === "O") {
+            return { valid: false, reason: "ALREADY SHOT THIS POSITION" };
+        }
+
+        return { valid: true };
     };
 
     /**
@@ -295,7 +321,6 @@ function Game() {
 
     /** Initiates game restart vote */
     const restartGame = () => {
-        setVoteRestart(true);
         send({ action: "restart_game"});
     };
 
@@ -403,15 +428,7 @@ function Game() {
                                         boardType={"small"}
                                         hits={state.opponent_hits}
                                         placedShips={state.placed_ships}
-                                        onCellClick={bothReady
-                                            ? null
-                                            : handleCellClick
-                                        }
-                                        canClick={!bothReady}
-                                        selectedShip={selectedShip}
-                                        orientation={orientation}
-                                        placeMode={placeMode}
-                                        pendingAction={pendingAction}
+                                        canClick={false}
                                     />
                                 </div>
                             )}
@@ -457,9 +474,10 @@ function Game() {
                                 boardType={"big"}
                                 hits={state.opponent_hits}
                                 placedShips={state.placed_ships}
-                                onCellClick={bothReady
-                                    ? null
-                                    : handleCellClick
+                                onCellClick={
+                                    (!state.ready)
+                                    ? handleCellClick
+                                    : null
                                 }
                                 canClick={!bothReady}
                                 selectedShip={selectedShip}
@@ -483,10 +501,12 @@ function Game() {
                                 }
                                 onCellClick={
                                     !gameOver
-                                    ? (isPlayerTurn ? makeMove : null)
+                                    ? (isPlayerTurn ? handleCellClick : null)
                                     : null
                                 }
-                                canClick={!gameOver}
+                                canClick={!gameOver && isPlayerTurn}
+                                placeMode={"move"}
+                                pendingAction={pendingAction}
                             />
                         </div>
                     )}
@@ -497,7 +517,8 @@ function Game() {
                     ) && (
                         <div className="action-button-container">
                             {/* Ready button */}
-                            {!state.ready
+                            {
+                                !state.ready
                                 && !opponentLeft
                                 && allShipsPlaced()
                                 && !pendingAction
@@ -534,16 +555,16 @@ function Game() {
                             )}
 
                             {/* Restart button if game over */}
-                            {gameOver && !opponentLeft && (
+                            {
+                                !voteRestart
+                                && gameOver 
+                                && !opponentLeft 
+                                && (
                                 <button
                                     className="button"
                                     onClick={restartGame}
-                                    disabled={voteRestart}
                                 >
-                                    {voteRestart
-                                        ? "Voted for rematch"
-                                        : "Play Again"
-                                    }
+                                    {"Play Again"}
                                 </button>
                             )}
                         </div>

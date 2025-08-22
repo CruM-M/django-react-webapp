@@ -2,6 +2,7 @@ import LogoutButton from "../components/LogoutButton";
 import Chat from "../components/Chat";
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from "react-router-dom";
+import { capitalizeFirstLetter } from "../utils";
 
 /**
  * Lobby component - handles real-time communication between users 
@@ -193,16 +194,6 @@ function Lobby({ setIsAuthenticated }) {
             chatWith: user
         }));
     };
-
-    /**
-     * Capitalizes the first letter of a given string.
-     * @param {string} string - Input string
-     * @returns {string} Formatted string with first letter uppercase
-     */
-    const capitalizeFirstLetter = (string) => {
-        if (!string) return "";
-        return string.charAt(0).toUpperCase() + string.slice(1);
-    }
 
     return (
         <div className="page-container">
