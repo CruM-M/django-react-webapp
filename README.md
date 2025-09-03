@@ -6,7 +6,7 @@ Web application available at: https://bsplatform.duckdns.org/
 
 ---
 
-## Table of contents
+# Table of contents
 
 * [Preview / screenshots](#preview--screenshots)
 * [Key features](#key-features)
@@ -14,11 +14,11 @@ Web application available at: https://bsplatform.duckdns.org/
 * [Architecture](#architecture)
 * [Game logic — summary](#game-logic--summary)
 * [Quick start (local dev)](#quick-start-local-dev)
-* [Deployment: AWS EC2 + Nginx + Gunicorn (ASGI) + Redis](#deployment-aws-ec2--nginx--gunicorn-asgi--redis)
+* [Deployment: AWS EC2 + Nginx + Daphne (ASGI) + Redis](#deployment-aws-ec2--nginx--daphne-asgi--redis)
 
 ---
 
-## Preview / screenshots
+# Preview / screenshots
 
 * **Home** — login / registration navigation buttons
 
@@ -40,7 +40,7 @@ Web application available at: https://bsplatform.duckdns.org/
 
 ---
 
-## Key features
+# Key features
 
 * 🔐 **Login & registration** (Django + DRF), CSRF protection on frontend.
 * 🛋️ **Lobby**:
@@ -61,7 +61,7 @@ Web application available at: https://bsplatform.duckdns.org/
 
 ---
 
-## Tech Stack
+# Tech Stack
 
 **Backend**  
 - Django 5.2  
@@ -80,28 +80,28 @@ Web application available at: https://bsplatform.duckdns.org/
 
 ---
 
-## Architecture
+# Architecture
 
 The system uses a **client-server architecture** with real-time multiplayer features.
 
-### Frontend
+## Frontend
 - Handles authentication, lobby state, chat, and game state.
 - Communicates with backend via REST API (DRF) and WebSockets (Channels).
 - Manages state with React hooks (`useState`, `useEffect`, `useRef`).
 
-### Backend
+## Backend
 - Serves REST APIs for login, registration, session management.
 - Manages real-time communication (lobby, chat, game) via Django Channels + Redis.
 - Stores persistent data in SQLite and ephemeral data in Redis.
 - Handles game logic and cleanup tasks asynchronously.
 
-### Communication Flow
+## Communication Flow
 1. **Authentication** – REST API session check; CSRF protection.
 2. **Lobby** – WebSocket pushes user list, invites, chat messages; heartbeat pings refresh TTL.
 3. **Game** – Real-time game actions sent via WebSocket; backend validates and broadcasts updates.
 4. **State Tracking** – Redis manages online status, chat history, ephemeral game state; cleanup removes inactive sessions.
 
-### Notes
+## Notes
 - Async functions on backend handle multiple WebSocket connections concurrently.
 - Lobby/game state and chat notifications are reactive, providing instant updates.
 
@@ -139,9 +139,9 @@ flowchart TD
 
 ---
 
-## Game logic — summary
+# Game logic — summary
 
-1. **Setup**
+## 1. Setup
    - Each player has a 10x10 empty board.
    - Fleet composition per player:
      - 1 ship of length 5
@@ -156,7 +156,7 @@ flowchart TD
    - Ships can be removed (restoring availability).
    - Players must place all ships before marking as **ready**.
 
-2. **Gameplay**
+## 2. Gameplay
    - First turn is assigned randomly when the game is created.
    - On their turn, a player fires at coordinates `(x, y)`.
    - Outcomes:
@@ -170,11 +170,11 @@ flowchart TD
      - firing when not your turn
    - After each move, turn passes to the opponent.
 
-3. **Ending**
+## 3. Ending
    - Winner is declared once all opponent ships are sunk.
    - Players may request a rematch or the game can be deleted (`end_game`).
 
-4. **State retrieval**
+## 4. State retrieval
    - At any moment, players can query the game state:
      - own board, opponent board, hits, placed ships
      - readiness of both players
@@ -183,15 +183,15 @@ flowchart TD
 
 ---
 
-## Quick start (local dev)
+# Quick start (local dev)
 
-1. Clone the repository:
+## 1. Clone the repository:
    ```bash
    git clone https://github.com/CruM-M/django-react-webapp.git
    cd django-react-webapp
    ```
 
-2. Environment configuration:
+## 2. Environment configuration:
    
    Create environmental files in main folders:
    
@@ -211,7 +211,7 @@ flowchart TD
    VITE_WS_API_URL=ws://localhost:8000/ws
    ```
 
-2. Backend setup:
+## 2. Backend setup:
    ```bash
    cd backend
    python -m venv venv
@@ -226,19 +226,19 @@ flowchart TD
    daphne -b localhost -p 8000 backend.asgi:application
    ```
 
-4. Frontend setup:
+## 4. Frontend setup:
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
    
-6. Visit the app:
+## 6. Visit the app:
    http://localhost:5173
 
-## Deployment: AWS EC2 + Nginx + Daphne (ASGI) + Redis
+# Deployment: AWS EC2 + Nginx + Daphne (ASGI) + Redis
 
-1. **Launch EC2 instance**  
+## 1. Launch EC2 instance 
    - Ubuntu 22.04 LTS.  
    - Open ports in **Security Groups**:  
      - 22 (SSH),  
@@ -246,13 +246,13 @@ flowchart TD
      - 443 (HTTPS),  
      - 8000.  
 
-2. **Connect to the EC2 instance**
+## 2. Connect to the EC2 instance
    ```bash
    ssh -i your_key_pair_from_ec2.pem ubuntu@<Instance's Public IPv4 address>
    ```
    or directly through the AWS console.
    
-3. **Update system and install dependencies**  
+## 3. Update system and install dependencies 
    ```bash
    sudo apt update && sudo apt upgrade -y
    sudo apt install -y python3 python3-pip python3-venv redis-server nginx
@@ -262,7 +262,7 @@ flowchart TD
    sudo systemctl status redis-server
    ```
 
-4. **Clone your project & set up virtualenv**  
+## 4. Clone your project & set up virtualenv
    ```bash
    git clone https://github.com/CruM-M/django-react-webapp.git
    cd django-react-webapp/backend
@@ -273,36 +273,38 @@ flowchart TD
    pip install -r requirements.txt
    ```
 
-5. **Run database migrations & collect static files**  
+## 5. Run database migrations & collect static files
    ```bash
    python manage.py migrate
    python manage.py collectstatic
    ```
 
-6. **Build frontend for production**
-   # Install Node.js (so you can build the frontend)
+## 6. Update .env files both for backend and frontend! 
+
+## 7. Build frontend for production
+   **Install Node.js (so you can build the frontend)**
    ```bash
    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
    sudo apt install -y nodejs
    ```
 
-   # Build React
+   **Build React**
    ```bash
    cd ../frontend
    npm install
    npm run build
    ```
 
-   # Copy the build folder to a path served by Nginx:
-    ```bash
+   **Copy the build folder to a path served by Nginx**
+   ```bash
    sudo mkdir -p /home/ubuntu/django-react-webapp/frontend_build
    sudo cp -r dist/* /home/ubuntu/django-react-webapp/frontend_build/
    sudo chown -R www-data:www-data /home/ubuntu/django-react-webapp/frontend_build
    sudo chmod -R 755 /home/ubuntu/django-react-webapp/frontend_build
    ```
 
-8. **Configure Daphne**
-   # Create systemd service for Daphne
+## 8. Configure Daphne
+   **Create systemd service for Daphne**
    ```bash
    sudo nano /etc/systemd/system/daphne.service
    ```
@@ -323,7 +325,7 @@ flowchart TD
    WantedBy=multi-user.target
    ```
 
-   # Reload systemd and start Daphne
+   **Reload systemd and start Daphne**
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl enable daphne
@@ -331,7 +333,7 @@ flowchart TD
    sudo systemctl status daphne
    ```
 
-9. **Configure Nginx**
+## 9. Configure Nginx
    ```bash
    sudo nano /etc/nginx/sites-available/battleships
    ```
@@ -386,7 +388,7 @@ flowchart TD
    }
    ```
 
-   # Increase server name hash bucket size
+   **Increase server name hash bucket size**
    ```bash
    sudo nano /etc/nginx/nginx.conf
    ```
@@ -394,7 +396,7 @@ flowchart TD
    server_names_hash_bucket_size 128;
    ```
 
-   # Enable site and restart Nginx
+   **Enable site and restart Nginx**
    ```bash
    sudo ln -s /etc/nginx/sites-available/battleships /etc/nginx/sites-enabled/
    sudo nginx -t
@@ -402,10 +404,13 @@ flowchart TD
    sudo systemctl enable nginx
    ```
 
-10. **Optional: HTTPS with Certbot**
-    # Get a public domain then acquire a certificate
-    ```bash
-    sudo apt install certbot python3-certbot-nginx -y
-    sudo certbot --nginx -d <yourdomain.com>
-    ```
-    Now you can use the domain instead of the public IPv4 address.
+## 10. Optional: HTTPS with Certbot
+   **Get a public domain then acquire a certificate**
+   ```bash
+   sudo apt install certbot python3-certbot-nginx -y
+   sudo certbot --nginx -d <yourdomain.com>
+   ```
+
+   Remember to update your .env files, then rebuild frontend, copy build folder and restard Daphne/Nginx whenever you change the address.
+  
+   Now you can use the domain instead of the public IPv4 address.
