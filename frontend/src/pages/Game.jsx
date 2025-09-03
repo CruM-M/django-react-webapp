@@ -400,18 +400,21 @@ function Game() {
                                     {orientation.toUpperCase()}
                                 </button>
                                 <button
-                                    className="ship-button"
+                                    className={`ship-button ${
+                                        placeMode === "remove"
+                                        ? "selected"
+                                        : ""
+                                    }`}
                                     onClick={() => {
-                                        setPlaceMode(p =>
-                                            p === "place"
-                                            ? "remove"
-                                            : "place"
-                                        );
+                                        setPlaceMode("remove");
                                         setSelectedShip(null);
                                     }}
-                                    disabled={pendingAction}
+                                    disabled={
+                                        pendingAction
+                                        || placeMode === "remove"
+                                    }
                                 >
-                                    {placeMode.toUpperCase()}
+                                    {"Remove"}
                                 </button>
                             </div>
                         </div>
